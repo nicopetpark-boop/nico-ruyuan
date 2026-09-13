@@ -139,6 +139,19 @@
       padding-inline: 10px;
     }
     .login-card .btn { width: 100%; margin-top: 18px; }
+    .cf-box {
+      margin: 16px 0 -4px;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      background: rgba(221, 208, 195, .42);
+      text-align: left;
+    }
+    .cf-box p {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: .76rem;
+      font-weight: 700;
+    }
     .message {
       margin: 12px 0 0;
       border-radius: 12px;
@@ -587,6 +600,10 @@
         <label for="password">管理密碼</label>
         <input id="password" name="password" type="password" autocomplete="current-password" required />
       </div>
+      <div class="cf-box" id="cf-admin-wrap" hidden>
+        <p>安全驗證</p>
+        <div id="cf-admin"></div>
+      </div>
       <button class="btn" type="submit" id="login-button">安全登入</button>
       <p class="message" id="login-message" role="alert" hidden></p>
     </form>
@@ -728,9 +745,12 @@
     "use strict";
 
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxWAqXPbNKhk4F5mL08t1Dp6OuWBKdW69i6pILv8uvG0ICYSuImnNCo9FPlz9cCxVQ4/exec";
+    // 啟用 Turnstile 時，填入入園專用 Site Key；Secret 僅能放在 GAS Script Properties。
+    const TURNSTILE_SITE_KEY = "";
     const SESSION_KEY = "nicopark-admin-session";
     const FETCH_TIMEOUT = 30000;
     const AUTO_REFRESH_MS = 30000;
+    const IDLE_LOGOUT_MS = 20 * 60 * 1000;
     let token = "";
     let currentCaseId = "";
     let toastTimer = null;
@@ -739,6 +759,8 @@
     let nextRefreshAt = 0;
     let lastSyncAt = null;
     let refreshInFlight = false;
+    let lastUserActivityAt = Date.now();
+    let cfAdminWidgetId = null;
 
     const $ = (selector, root) => (root || document).querySelector(selector);
 
@@ -749,6 +771,43 @@
     function value(id) {
       const el = document.getElementById(id);
       return el ? String(el.value || "").trim() : "";
+    }
+
+    function turnstileEnabled() {
+      return TURNSTILE_SITE_KEY && !/YOUR_|REPLACE_|請填/i.test(TURNSTILE_SITE_KEY);
+    }
+
+    function mountAdminTurnstile() {
+      if (!turnstileEnabled() || !window.turnstile || cfAdminWidgetId !== null) return;
+      $("#cf-admin-wrap").hidden = false;
+      cfAdminWidgetId = window.turnstile.render("#cf-admin", {
+        sitekey: TURNSTILE_SITE_KEY,
+        theme: "light",
+        size: "flexible"
+      });
+    }
+
+    function loadAdminTurnstile() {
+      if (!turnstileEnabled()) return;
+      $("#cf-admin-wrap").hidden = false;
+      if (window.turnstile) { mountAdminTurnstile(); return; }
+      if (document.querySelector('script[data-nicopark-admin-turnstile]')) return;
+      const script = document.createElement("script");
+      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+      script.async = true;
+      script.defer = true;
+      script.dataset.nicoparkAdminTurnstile = "true";
+      script.onload = mountAdminTurnstile;
+      document.head.appendChild(script);
+    }
+
+    function readAdminTurnstile() {
+      if (!turnstileEnabled()) return "";
+      return window.turnstile && cfAdminWidgetId !== null ? window.turnstile.getResponse(cfAdminWidgetId) : "";
+    }
+
+    function resetAdminTurnstile() {
+      if (window.turnstile && cfAdminWidgetId !== null) window.turnstile.reset(cfAdminWidgetId);
     }
 
     async function api(payload) {
@@ -784,6 +843,7 @@
 
     function setSession(sessionToken) {
       token = sessionToken || "";
+      lastUserActivityAt = Date.now();
       if (token) sessionStorage.setItem(SESSION_KEY, token);
       else {
         sessionStorage.removeItem(SESSION_KEY);
@@ -798,6 +858,7 @@
       const box = $("#login-message");
       box.hidden = !message;
       box.textContent = message || "";
+      loadAdminTurnstile();
       setTimeout(() => $("#username").focus(), 20);
     }
 
@@ -850,6 +911,15 @@
       autoRefreshTimer = null;
       countdownTimer = null;
       nextRefreshAt = 0;
+    }
+
+    function noteUserActivity() {
+      lastUserActivityAt = Date.now();
+    }
+
+    function enforceIdleLogout() {
+      if (!token || Date.now() - lastUserActivityAt < IDLE_LOGOUT_MS) return;
+      showLogin("因閒置超過 20 分鐘，已為保護資料自動登出。");
     }
 
     function startAutoRefresh() {
@@ -1319,13 +1389,15 @@
         const data = await api({
           action: "adminLogin",
           username: value("username"),
-          password: value("password")
+          password: value("password"),
+          turnstileToken: readAdminTurnstile()
         });
         setSession(data.token);
         $("#password").value = "";
         showApp();
         await refreshAll(true);
       } catch (error) {
+        resetAdminTurnstile();
         box.textContent = error.message || "登入失敗";
         box.hidden = false;
       } finally {
@@ -1363,6 +1435,10 @@
         refreshAll(true);
       }
     });
+    ["pointerdown", "keydown", "touchstart", "scroll"].forEach((eventName) => {
+      document.addEventListener(eventName, noteUserActivity, { passive: true });
+    });
+    window.setInterval(enforceIdleLogout, 30000);
 
     token = sessionStorage.getItem(SESSION_KEY) || "";
     if (token) {
