@@ -492,6 +492,21 @@
       padding: 0;
       min-width: 0;
     }
+
+    /* iPhone：讓欄位標題／必填提示與選項框保持清楚距離 */
+    @media (max-width: 480px) {
+      .field label.main,
+      .field > label,
+      fieldset.field > legend {
+        margin: 0 0 10px;
+        line-height: 1.5;
+      }
+      .req {
+        display: inline-block;
+        margin-left: 6px;
+        line-height: 1.5;
+      }
+    }
     .req {
       color: var(--danger);
       font-weight: 500;
