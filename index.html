@@ -11,7 +11,7 @@
   <meta property="og:image" content="nico-nico-pet-house-logo.png" />
   <title>入園登記資料表｜Nico Nico Pet House</title>
   <link rel="icon" type="image/png" href="nico-nico-pet-house-logo.png" />
-  <script src="lib/signature_pad.umd.min.js"></script>
+  <script src="lib/signature_pad.umd.min.js?v=20260915"></script>
   <style>
     :root {
       --oat: #AC9D8D;
@@ -1636,6 +1636,7 @@
         <a class="pdf-link" id="pdf-link" hidden target="_blank" rel="noopener noreferrer">下載入園資料副本（PDF）</a>
         <div class="pet-actions" style="margin-top:16px">
           <button type="button" class="btn btn-ghost" id="success-lookup">查詢其他案件</button>
+          <button type="button" class="btn btn-ghost" id="clear-local-data">清除本機資料</button>
         </div>
       </article>
     </section>
@@ -1892,7 +1893,7 @@
     /**
      * Cloudflare Turnstile 的 Site Key（可公開，不是密鑰）。
      * 到 https://dash.cloudflare.com 建立 Turnstile 小工具後貼上。
-     * 網域請加入 ericlin0616.github.io
+     * 正式網域：ruyuan.niconicopet.com
      * Secret Key 只能貼在 Apps Script 的 CONFIG.TURNSTILE_SECRET，不要放這裡。
      */
     const TURNSTILE_SITE_KEY = "0x4AAAAAAEzb3l3nV-QOhXvm";
@@ -2288,6 +2289,16 @@
         const data = collectForm();
         sessionStorage.setItem(DRAFT_KEY, JSON.stringify(data));
       } catch (e) { /* ignore quota */ }
+    }
+
+    function clearLocalData() {
+      try {
+        sessionStorage.removeItem(DRAFT_KEY);
+        sessionStorage.removeItem(DRAFT_KEY_OLD);
+      } catch (e) { /* ignore */ }
+      const form = document.getElementById("park-form");
+      if (form) form.reset();
+      if (pad) pad.clear();
     }
 
     function restoreDraft() {
@@ -3108,8 +3119,8 @@
         const caseId = pick(data, ["caseId", "case_id", "recordId", "ticketId", "id"]);
         const pdfUrl = pick(data, ["pdfUrl", "pdf_url", "pdf"]);
         const message = pick(data, ["message", "msg"]);
+        clearLocalData();
         showSuccess({ caseId, pdfUrl, message });
-        try { sessionStorage.removeItem(DRAFT_KEY); } catch (e) { /* ignore */ }
       } catch (err) {
         showBanner(3, err.message || "送出失敗，請稍後再試。");
       } finally {
@@ -3242,6 +3253,12 @@
     document.getElementById("nav-register").addEventListener("click", () => setMode("register"));
     document.getElementById("nav-lookup").addEventListener("click", () => setMode("lookup"));
     document.getElementById("success-lookup").addEventListener("click", () => setMode("lookup"));
+    document.getElementById("clear-local-data").addEventListener("click", (e) => {
+      clearLocalData();
+      e.currentTarget.disabled = true;
+      e.currentTarget.textContent = "本機資料已清除";
+      announce("本機暫存資料已清除");
+    });
     document.getElementById("send-lookup-otp").addEventListener("click", sendLookupOtp);
     document.getElementById("do-lookup").addEventListener("click", doLookup);
     document.getElementById("lookupOtp").addEventListener("input", (e) => {
