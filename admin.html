@@ -772,7 +772,8 @@
 
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxWAqXPbNKhk4F5mL08t1Dp6OuWBKdW69i6pILv8uvG0ICYSuImnNCo9FPlz9cCxVQ4/exec";
     // 啟用 Turnstile 時，填入入園專用 Site Key；Secret 僅能放在 GAS Script Properties。
-    const TURNSTILE_SITE_KEY = "";
+    // 與入園客人表單共用同一組「公開」Site Key；Secret 僅存在 GAS 指令碼屬性。
+    const TURNSTILE_SITE_KEY = "0x4AAAAAAEzb3l3nV-QOhXvm";
     const SESSION_KEY = "nicopark-admin-session";
     const FETCH_TIMEOUT = 30000;
     const AUTO_REFRESH_MS = 30000;
