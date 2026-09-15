@@ -374,6 +374,32 @@
       font-size: .7rem;
       font-weight: 700;
     }
+    .care-alert {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 6px;
+      border-radius: 999px;
+      padding: 3px 8px;
+      color: #9B302B;
+      background: #FDE8E7;
+      box-shadow: inset 0 0 0 1px #F1BDB8;
+      font-size: .7rem;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .care-alert-detail {
+      margin: 0;
+      border-radius: 12px;
+      padding: 11px 12px;
+      color: #8B2925;
+      background: #FDE8E7;
+      box-shadow: inset 0 0 0 1px #F1BDB8;
+      font-size: .86rem;
+      font-weight: 700;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
     .status[data-status="待審核"] { --tone-bg: #F5EADF; --tone-text: #805E46; }
     .status[data-status="待聯繫"] { --tone-bg: #EEE7D5; --tone-text: #77683A; }
     .status[data-status="已確認"] { --tone-bg: #E2E9E5; --tone-text: #4F6A5B; }
@@ -1081,6 +1107,13 @@
         phoneSmall.textContent = item.phone || "—";
         ownerCell.append(ownerStrong, phoneSmall);
 
+        if (item.specialAlert) {
+          const alert = document.createElement("span");
+          alert.className = "care-alert";
+          alert.textContent = "特殊提醒：" + item.specialAlert;
+          row.children[3].appendChild(alert);
+        }
+
         row.children[4].replaceChildren(statusBadge(item.status));
         row.addEventListener("click", () => openCase(item.caseId));
         tbody.appendChild(row);
@@ -1098,6 +1131,12 @@
         const when = document.createElement("small");
         when.textContent = (item.submittedAt || "") + "　" + (item.phone || "");
         card.append(top, meta, when);
+        if (item.specialAlert) {
+          const alert = document.createElement("span");
+          alert.className = "care-alert";
+          alert.textContent = "特殊提醒：" + item.specialAlert;
+          card.appendChild(alert);
+        }
         card.addEventListener("click", () => openCase(item.caseId));
         mobile.appendChild(card);
       });
@@ -1198,6 +1237,15 @@
       links.appendChild(prefill);
       owner.appendChild(links);
       host.appendChild(owner);
+
+      if (data.specialAlert) {
+        const alertSection = detailSection("特殊提醒");
+        const alertText = document.createElement("p");
+        alertText.className = "care-alert-detail";
+        alertText.textContent = data.specialAlert;
+        alertSection.appendChild(alertText);
+        host.appendChild(alertSection);
+      }
 
       const pets = detailSection("毛孩資料");
       (data.pets || []).forEach((pet, index) => {
