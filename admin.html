@@ -609,6 +609,46 @@
       .drawer-panel { border-radius: 24px 24px 0 0; height: min(92dvh, 900px); margin-top: auto; }
       .drawer { align-items: flex-end; }
     }
+  
+    /* 三站統一管理中心 */
+    .unified-console { margin: 0 0 22px; }
+    .unified-console .surface { padding: 24px; }
+    .unified-head { display:flex; gap:16px; align-items:flex-start; justify-content:space-between; margin-bottom:18px; }
+    .unified-head h2 { margin:0; }
+    .unified-head .surface-lede { margin:5px 0 0; }
+    .unified-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:0 0 16px; }
+    .unified-metric { border:1px solid var(--line); border-radius:16px; background:var(--cream); padding:15px; }
+    .unified-metric span { display:block; color:var(--muted); font-size:13px; font-weight:800; }
+    .unified-metric strong { display:block; margin-top:5px; font-size:28px; color:var(--ink); }
+    .service-overview { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:0 0 18px; }
+    .service-card { text-align:left; border:1px solid var(--line); background:#fff; border-radius:14px; padding:15px; cursor:pointer; color:inherit; font:inherit; }
+    .service-card:hover, .service-card.is-selected { border-color:var(--brown); box-shadow:0 7px 18px rgba(69,51,40,.10); }
+    .service-card strong { display:block; font-size:17px; margin-bottom:7px; }
+    .service-card span { display:block; color:var(--muted); font-size:13px; line-height:1.65; }
+    .unified-filters { display:grid; grid-template-columns:minmax(220px,2fr) minmax(130px,1fr) auto; gap:12px; align-items:end; margin:0 0 12px; }
+    .unified-table .service-tag { display:inline-flex; padding:4px 9px; border-radius:999px; background:#eee5dc; font-weight:800; font-size:12px; white-space:nowrap; }
+    .unified-table .case-cell { display:grid; gap:3px; }
+    .unified-table .case-cell strong { font-size:13px; }
+    .unified-table .case-cell span { font-size:12px; color:var(--muted); }
+    .unified-row { cursor:pointer; }
+    .unified-row:hover { background:#fbf5ef; }
+    .unified-alert { color:#a8423f; font-weight:800; max-width:280px; white-space:normal; }
+    .unified-empty { padding:20px 0 4px; color:var(--muted); }
+    .unified-detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:16px 0; }
+    .unified-detail-item { padding:12px; border-radius:12px; background:#f8f3ed; }
+    .unified-detail-item span { display:block; color:var(--muted); font-size:12px; font-weight:800; margin-bottom:4px; }
+    .unified-detail-item strong { word-break:break-word; }
+    .unified-actions { display:grid; gap:14px; border-top:1px solid var(--line); margin-top:18px; padding-top:18px; }
+    .unified-actions textarea { min-height:105px; resize:vertical; }
+    @media (max-width:760px) {
+      .unified-head { display:block; }
+      .unified-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .service-overview { grid-template-columns:1fr; }
+      .unified-filters { grid-template-columns:1fr; }
+      .unified-table { display:none; }
+      .unified-detail-grid { grid-template-columns:1fr; }
+    }
+
   </style>
 </head>
 <body>
@@ -653,7 +693,7 @@
       <div class="page-head">
         <div>
           <p class="eyebrow">today at nicopark</p>
-          <h1>入園案件</h1>
+          <h1>店家管理中心</h1>
           <div class="sync-line">
             <span class="live-badge" id="live-badge" data-state="loading">Google 試算表連動中</span>
             <p id="last-sync">尚未同步</p>
@@ -662,7 +702,53 @@
         <button class="btn secondary" type="button" id="refresh-button">重新整理</button>
       </div>
 
-      <section class="metrics" aria-label="案件統計">
+      
+      <section class="unified-console" aria-labelledby="unified-title">
+        <div class="surface">
+          <div class="unified-head">
+            <div>
+              <p class="eyebrow">store command center</p>
+              <h2 id="unified-title">三站統一管理</h2>
+              <p class="surface-lede">入園、入館、寄宿集中檢視與處理；每一站原始資料仍各自保存在獨立試算表。</p>
+            </div>
+            <span class="live-badge" id="unified-badge" data-state="loading">三站資料載入中</span>
+          </div>
+          <div class="unified-metrics" aria-label="三站案件統計">
+            <article class="unified-metric"><span>今日新增</span><strong id="unified-today">—</strong></article>
+            <article class="unified-metric"><span>待處理</span><strong id="unified-pending">—</strong></article>
+            <article class="unified-metric"><span>特殊提醒</span><strong id="unified-attention">—</strong></article>
+            <article class="unified-metric"><span>全部案件</span><strong id="unified-total">—</strong></article>
+          </div>
+          <div class="service-overview" id="unified-services"></div>
+          <form class="unified-filters" id="unified-filter-form">
+            <div class="field">
+              <label for="unified-query">搜尋三站案件</label>
+              <input id="unified-query" type="search" placeholder="案件、飼主、電話、毛孩或備註" />
+            </div>
+            <div class="field">
+              <label for="unified-service">服務別</label>
+              <select id="unified-service">
+                <option value="all">全部服務</option>
+                <option value="ruyuan">入園</option>
+                <option value="ruguan">入館</option>
+                <option value="qisu">寄宿</option>
+              </select>
+            </div>
+            <button class="btn secondary" type="submit">查詢三站</button>
+          </form>
+          <p class="result-meta"><span id="unified-result-count">載入中…</span><span id="unified-result-note"></span></p>
+          <div class="table-wrap unified-table">
+            <table>
+              <thead><tr><th>服務</th><th>送出時間</th><th>案件</th><th>飼主／毛孩</th><th>狀態</th><th>特殊提醒</th></tr></thead>
+              <tbody id="unified-tbody"></tbody>
+            </table>
+            <p class="unified-empty" id="unified-empty" hidden>目前沒有符合條件的案件。</p>
+          </div>
+          <div class="mobile-cases" id="unified-mobile-cases"></div>
+        </div>
+      </section>
+
+      <section class="metrics" aria-label="入園案件統計">
         <article class="metric" style="--tone:#E6D1C2"><span>今日新增</span><strong id="stat-today">—</strong></article>
         <article class="metric" style="--tone:#E9DFC2"><span>待處理</span><strong id="stat-pending">—</strong></article>
         <article class="metric" style="--tone:#CFDDD4"><span>已確認</span><strong id="stat-confirmed">—</strong></article>
@@ -673,7 +759,7 @@
 
       <div class="workspace">
         <section class="surface">
-          <h2>案件清單</h2>
+          <h2>入園案件清單</h2>
           <p class="surface-lede">點選案件即可看完整資料、更新狀態與店家備註。</p>
           <form class="filters" id="filter-form">
             <div class="field">
@@ -745,6 +831,21 @@
       </div>
     </main>
   </div>
+
+
+  <section class="drawer" id="unified-drawer" role="dialog" aria-modal="true" aria-labelledby="unified-drawer-title" hidden>
+    <div class="drawer-panel">
+      <header class="drawer-head">
+        <div>
+          <p class="eyebrow">unified case detail</p>
+          <h2 id="unified-drawer-title">三站案件資料</h2>
+          <p id="unified-drawer-subtitle"></p>
+        </div>
+        <button class="icon-btn" type="button" id="unified-drawer-close" aria-label="關閉">×</button>
+      </header>
+      <div id="unified-drawer-content"><p class="loading">載入中…</p></div>
+    </div>
+  </section>
 
   <section class="drawer" id="case-drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden>
     <div class="drawer-panel">
@@ -992,6 +1093,233 @@
       applyCaseList(data);
     }
 
+
+    let unifiedData = null;
+    let unifiedSelectedService = "";
+    let unifiedSelectedCaseId = "";
+
+    function unifiedText(value) { return String(value == null ? "" : value); }
+
+    function setUnifiedState(state, label) {
+      const badge = $("#unified-badge");
+      badge.dataset.state = state;
+      badge.textContent = label;
+    }
+
+    function unifiedMetric(id, value) { $(id).textContent = unifiedText(value == null ? "—" : value); }
+
+    function loadUnifiedSnapshot(silent) {
+      if (!silent) $("#unified-result-count").textContent = "載入中…";
+      return auth("adminUnifiedSnapshot", {
+        service: value("unified-service"),
+        query: value("unified-query"),
+        limit: 200
+      }).then((data) => {
+        unifiedData = data;
+        applyUnifiedData(data);
+        return data;
+      });
+    }
+
+    function applyUnifiedData(data) {
+      const summary = data.summary || {};
+      unifiedMetric("#unified-today", summary.today);
+      unifiedMetric("#unified-pending", summary.pending);
+      unifiedMetric("#unified-attention", summary.attention);
+      unifiedMetric("#unified-total", summary.total);
+      $("#unified-result-count").textContent = "顯示 " + unifiedText((data.cases || []).length) + "／" + unifiedText(data.totalMatched || 0) + " 筆案件";
+      $("#unified-result-note").textContent = data.truncated ? "僅顯示前 200 筆，請用搜尋縮小範圍。" : "三站資料已分流載入";
+      setUnifiedState("ready", "三站資料已連動");
+      renderUnifiedServices(data.services || []);
+      renderUnifiedCases(data.cases || []);
+    }
+
+    function renderUnifiedServices(services) {
+      const host = $("#unified-services");
+      host.replaceChildren();
+      services.forEach((service) => {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "service-card" + (value("unified-service") === service.key ? " is-selected" : "");
+        const title = document.createElement("strong");
+        title.textContent = service.label;
+        const stats = document.createElement("span");
+        stats.textContent = "今日 " + unifiedText(service.today) + " · 待處理 " + unifiedText(service.pending) + " · 特殊提醒 " + unifiedText(service.attention);
+        const total = document.createElement("span");
+        total.textContent = "共 " + unifiedText(service.total) + " 筆案件";
+        card.append(title, stats, total);
+        card.addEventListener("click", () => {
+          $("#unified-service").value = service.key;
+          $("#unified-filter-form").dispatchEvent(new Event("submit", { cancelable: true }));
+        });
+        host.appendChild(card);
+      });
+    }
+
+    function unifiedCaseButton(caseData, compact) {
+      const button = document.createElement(compact ? "button" : "tr");
+      if (compact) {
+        button.type = "button";
+        button.className = "case-card";
+      } else {
+        button.className = "unified-row";
+        button.tabIndex = 0;
+      }
+      const open = () => openUnifiedCase(caseData.service, caseData.caseId);
+      button.addEventListener("click", open);
+      if (!compact) button.addEventListener("keydown", (event) => { if (event.key === "Enter") open(); });
+      return button;
+    }
+
+    function unifiedCell(content, className) {
+      const td = document.createElement("td");
+      if (className) td.className = className;
+      td.textContent = unifiedText(content || "—");
+      return td;
+    }
+
+    function renderUnifiedCases(cases) {
+      const tbody = $("#unified-tbody");
+      const mobile = $("#unified-mobile-cases");
+      const empty = $("#unified-empty");
+      tbody.replaceChildren();
+      mobile.replaceChildren();
+      empty.hidden = cases.length !== 0;
+      cases.forEach((caseData) => {
+        const row = unifiedCaseButton(caseData, false);
+        const tag = document.createElement("span");
+        tag.className = "service-tag";
+        tag.textContent = unifiedText(caseData.serviceLabel);
+        const serviceTd = document.createElement("td");
+        serviceTd.appendChild(tag);
+        row.append(
+          serviceTd,
+          unifiedCell(caseData.submittedAt),
+          unifiedCell(caseData.caseId),
+          unifiedCell(unifiedText(caseData.ownerName) + "／" + (caseData.petNames || []).join("、")),
+          unifiedCell(caseData.status),
+          unifiedCell(caseData.specialAlert || "—", caseData.specialAlert ? "unified-alert" : "")
+        );
+        tbody.appendChild(row);
+
+        const card = unifiedCaseButton(caseData, true);
+        const title = document.createElement("strong");
+        title.textContent = unifiedText(caseData.serviceLabel) + " · " + unifiedText(caseData.ownerName) + "／" + (caseData.petNames || []).join("、");
+        const line1 = document.createElement("span");
+        line1.textContent = unifiedText(caseData.caseId) + " · " + unifiedText(caseData.status);
+        const line2 = document.createElement("span");
+        line2.textContent = caseData.specialAlert ? "特殊提醒：" + unifiedText(caseData.specialAlert) : "無特殊提醒";
+        card.append(title, line1, line2);
+        mobile.appendChild(card);
+      });
+    }
+
+    async function openUnifiedCase(service, caseId) {
+      unifiedSelectedService = service;
+      unifiedSelectedCaseId = caseId;
+      $("#unified-drawer").hidden = false;
+      $("#unified-drawer-title").textContent = "載入案件資料…";
+      $("#unified-drawer-subtitle").textContent = "";
+      $("#unified-drawer-content").replaceChildren(Object.assign(document.createElement("p"), { className: "loading", textContent: "載入中…" }));
+      try {
+        const data = await auth("adminUnifiedGetCase", { service: service, caseId: caseId });
+        renderUnifiedDrawer(data.caseData || {});
+      } catch (error) {
+        if (isAuthError(error)) return showLogin(error.message);
+        $("#unified-drawer-content").replaceChildren(Object.assign(document.createElement("p"), { className: "message", textContent: error.message || "讀取案件失敗。" }));
+      }
+    }
+
+    function unifiedDetail(label, detail) {
+      const item = document.createElement("div");
+      item.className = "unified-detail-item";
+      const title = document.createElement("span");
+      title.textContent = label;
+      const body = document.createElement("strong");
+      body.textContent = unifiedText(detail || "—");
+      item.append(title, body);
+      return item;
+    }
+
+    function renderUnifiedDrawer(caseData) {
+      $("#unified-drawer-title").textContent = unifiedText(caseData.serviceLabel) + "｜" + unifiedText(caseData.caseId);
+      $("#unified-drawer-subtitle").textContent = "原始資料仍保存在「" + unifiedText(caseData.serviceLabel) + "」的獨立試算表。";
+      const host = $("#unified-drawer-content");
+      host.replaceChildren();
+      const grid = document.createElement("div");
+      grid.className = "unified-detail-grid";
+      grid.append(
+        unifiedDetail("送出時間", caseData.submittedAt),
+        unifiedDetail("飼主", caseData.ownerName),
+        unifiedDetail("毛孩", (caseData.petNames || []).join("、")),
+        unifiedDetail("聯絡電話", caseData.phone),
+        unifiedDetail("電子信箱", caseData.email),
+        unifiedDetail("特殊提醒", caseData.specialAlert || "無")
+      );
+      const actions = document.createElement("form");
+      actions.className = "unified-actions";
+      const statusField = document.createElement("div");
+      statusField.className = "field";
+      const statusLabel = document.createElement("label");
+      statusLabel.htmlFor = "unified-case-status";
+      statusLabel.textContent = "案件狀態";
+      const status = document.createElement("select");
+      status.id = "unified-case-status";
+      const allowed = (unifiedData && unifiedData.statuses) || ["待確認", "待審核", "待聯繫", "已確認", "已完成", "已取消"];
+      allowed.forEach((name) => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        option.selected = name === caseData.status;
+        status.appendChild(option);
+      });
+      statusField.append(statusLabel, status);
+      const noteField = document.createElement("div");
+      noteField.className = "field";
+      const noteLabel = document.createElement("label");
+      noteLabel.htmlFor = "unified-case-note";
+      noteLabel.textContent = "店員內部備註";
+      const note = document.createElement("textarea");
+      note.id = "unified-case-note";
+      note.placeholder = "僅店家管理端可見，不會顯示給客人。";
+      note.value = unifiedText(caseData.note);
+      noteField.append(noteLabel, note);
+      const save = document.createElement("button");
+      save.className = "btn";
+      save.type = "submit";
+      save.textContent = "儲存店家處理內容";
+      actions.append(statusField, noteField, save);
+      actions.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        save.disabled = true;
+        save.textContent = "儲存中…";
+        try {
+          const result = await auth("adminUnifiedUpdateCase", {
+            service: unifiedSelectedService,
+            caseId: unifiedSelectedCaseId,
+            caseStatus: status.value,
+            note: note.value
+          });
+          toast(result.message || "已儲存");
+          await loadUnifiedSnapshot(true);
+          await openUnifiedCase(unifiedSelectedService, unifiedSelectedCaseId);
+        } catch (error) {
+          if (isAuthError(error)) return showLogin(error.message);
+          toast(error.message || "儲存失敗");
+        } finally {
+          save.disabled = false;
+          save.textContent = "儲存店家處理內容";
+        }
+      });
+      host.append(grid, actions);
+    }
+
+    function closeUnifiedDrawer() {
+      $("#unified-drawer").hidden = true;
+      unifiedSelectedService = "";
+      unifiedSelectedCaseId = "";
+    }
+
     async function refreshAll(silent) {
       if (refreshInFlight) return;
       refreshInFlight = true;
@@ -1000,6 +1328,12 @@
       setLiveState("loading", "Google 試算表同步中");
       try {
         await loadSnapshot(silent);
+        try { await loadUnifiedSnapshot(silent); }
+        catch (unifiedError) {
+          if (isAuthError(unifiedError)) return showLogin(unifiedError.message);
+          setUnifiedState("error", "三站總覽暫時無法載入");
+          $("#unified-result-note").textContent = unifiedError.message || "請稍後重新整理。";
+        }
         lastSyncAt = new Date();
         nextRefreshAt = Date.now() + AUTO_REFRESH_MS;
         setLiveState("ready", "Google 試算表已連動");
@@ -1371,6 +1705,22 @@
         toast(successMessage);
       }
     }
+
+
+    $("#unified-filter-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      loadUnifiedSnapshot(false).catch((error) => {
+        if (isAuthError(error)) showLogin(error.message);
+        else {
+          setUnifiedState("error", "三站總覽暫時無法載入");
+          $("#unified-result-note").textContent = error.message || "查詢失敗";
+        }
+      });
+    });
+    $("#unified-drawer-close").addEventListener("click", closeUnifiedDrawer);
+    $("#unified-drawer").addEventListener("click", (event) => {
+      if (event.target === event.currentTarget) closeUnifiedDrawer();
+    });
 
     $("#login-form").addEventListener("submit", async (event) => {
       event.preventDefault();
