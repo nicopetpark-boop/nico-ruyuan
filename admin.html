@@ -882,6 +882,25 @@
     let refreshInFlight = false;
     let lastUserActivityAt = Date.now();
 
+    const $ = (selector) => document.querySelector(selector);
+    function value(id) {
+      const field = document.getElementById(id);
+      return field ? String(field.value || "").trim() : "";
+    }
+    function text(input) {
+      return String(input == null ? "" : input);
+    }
+    function loginErrorMessage(error) {
+      const message = String(error && error.message || "");
+      if (/帳號|密碼|登入失敗|驗證失敗|無效/.test(message)) {
+        return "帳號或密碼不正確，請確認後再試。";
+      }
+      if (/逾時|timeout/i.test(message)) return "登入連線逾時，請確認網路後再試。";
+      if (/回傳格式|伺服器/.test(message)) return "伺服器暫時異常，請稍後重新登入。";
+      return message ? "無法登入：" + message : "無法登入，請稍後再試。";
+    }
+
+
 
     async function api(payload) {
       const controller = new AbortController();
@@ -1740,7 +1759,7 @@
         showApp();
         await refreshAll(true);
       } catch (error) {
-box.textContent = error.message || "登入失敗";
+box.textContent = loginErrorMessage(error);
         box.hidden = false;
       } finally {
         button.disabled = false;
