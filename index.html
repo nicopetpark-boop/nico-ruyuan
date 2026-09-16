@@ -852,7 +852,6 @@
       letter-spacing: 0.06em;
       color: var(--muted);
     }
-    .cf-box iframe, .cf-box .cf-turnstile { max-width: 100%; }
     #step-1, #step-2, #step-3, #lookup-panel {
       padding-bottom: calc(108px + env(safe-area-inset-bottom));
     }
@@ -1605,9 +1604,6 @@
               <input id="otp" name="otp" class="otp-input" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" placeholder="••••••" />
             <p class="error" data-err="otp"></p>
             </div>
-            <div class="cf-box" id="cf-register-wrap" hidden>
-              <div id="cf-register"></div>
-            </div>
             <button type="button" class="btn btn-ghost" id="send-otp">發送驗證碼</button>
           </div>
         </article>
@@ -1657,9 +1653,6 @@
             <label for="lookupOtp">6 位數驗證碼 <span class="req">必填</span></label>
             <input id="lookupOtp" class="otp-input" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" placeholder="••••••" />
             <p class="error" data-err="lookupOtp"></p>
-          </div>
-          <div class="cf-box" id="cf-lookup-wrap" hidden>
-            <div id="cf-lookup"></div>
           </div>
           <button type="button" class="btn btn-ghost" id="send-lookup-otp">發送驗證碼</button>
           <button type="button" class="btn btn-primary" id="do-lookup">查詢案件</button>
@@ -1886,17 +1879,10 @@
     /**
      * 請將 Google Apps Script Web App 部署後的 /exec 網址貼在下方。
      * 重新部署後網址若改變，這裡一定要一起改，並請客人用 ?v=25 這類參數避開快取。
-     * 請勿在前端放入三竹簡訊帳密、API Key、Google 憑證或 Turnstile Secret。
+     * 請勿在前端放入三竹簡訊帳密、API Key、Google 憑證。
      */
     // 客戶前台與 admin.html 必須使用同一個入園正式部署，避免資料與安全版本分流。
     const GAS_WEB_APP_URL = "https://nico-api-proxy.nicopetpark.workers.dev/ruyuan";
-    /**
-     * Cloudflare Turnstile 的 Site Key（可公開，不是密鑰）。
-     * 到 https://dash.cloudflare.com 建立 Turnstile 小工具後貼上。
-     * 正式網域：ruyuan.niconicopet.com
-     * Secret Key 只能貼在 Apps Script 的 CONFIG.TURNSTILE_SECRET，不要放這裡。
-     */
-    const TURNSTILE_SITE_KEY = "0x4AAAAAAEzb3l3nV-QOhXvm";
 
     const DRAFT_KEY = "nicopark-draft-v2";
     const DRAFT_KEY_OLD = "nicopark-draft-v1";
@@ -2764,72 +2750,6 @@
       return /^https:\/\//i.test(u);
     }
 
-    let cfRegId = null;
-    let cfLookupId = null;
-
-    function turnstileEnabled() {
-      return /^0[a-zA-Z0-9_-]{10,}/.test(String(TURNSTILE_SITE_KEY || "").trim())
-        || /^[0-9A-Za-z_-]{10,}$/.test(String(TURNSTILE_SITE_KEY || "").trim());
-    }
-
-    function mountTurnstile(elId) {
-      if (!turnstileEnabled() || !window.turnstile) return null;
-      const el = document.getElementById(elId);
-      if (!el) return null;
-      el.innerHTML = "";
-      try {
-        return window.turnstile.render(el, {
-          sitekey: TURNSTILE_SITE_KEY.trim(),
-          theme: "light",
-          language: "zh-TW",
-          appearance: "always"
-        });
-      } catch (err) {
-        return null;
-      }
-    }
-
-    function loadTurnstile() {
-      if (!turnstileEnabled()) return;
-      ["cf-register-wrap", "cf-lookup-wrap"].forEach((id) => {
-        const w = document.getElementById(id);
-        if (w) w.hidden = false;
-      });
-      if (window.turnstile) {
-        cfRegId = mountTurnstile("cf-register");
-        cfLookupId = mountTurnstile("cf-lookup");
-        return;
-      }
-      if (document.getElementById("cf-turnstile-script")) return;
-      const s = document.createElement("script");
-      s.id = "cf-turnstile-script";
-      s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-      s.async = true;
-      s.defer = true;
-      s.onload = function () {
-        cfRegId = mountTurnstile("cf-register");
-        cfLookupId = mountTurnstile("cf-lookup");
-      };
-      document.head.appendChild(s);
-    }
-
-    function readTurnstile(widgetId) {
-      if (!turnstileEnabled()) return "";
-      if (!window.turnstile) {
-        throw new AppError("人機驗證尚未載入完成，請稍候再試。");
-      }
-      const token = window.turnstile.getResponse(widgetId);
-      if (!token) {
-        throw new AppError("請先完成人機驗證（勾選我不是機器人）。");
-      }
-      return token;
-    }
-
-    function resetTurnstile(widgetId) {
-      try {
-        if (window.turnstile && widgetId != null) window.turnstile.reset(widgetId);
-      } catch (e) { /* ignore */ }
-    }
 
     async function callGas(payload) {
       if (!gasConfigured()) {
@@ -2940,9 +2860,9 @@
           action: "sendOtp",
           email: email,
           purpose: "lookup",
-          turnstileToken: readTurnstile(cfLookupId)
+
         });
-        resetTurnstile(cfLookupId);
+
         const masked = data.emailMasked || email;
         showBanner("lookup", "驗證碼已寄到 " + masked + "。若沒看到請檢查垃圾信件或促銷分頁。", "ok");
         startOtpCountdown(btn, "lookup");
@@ -2978,9 +2898,9 @@
           action: "lookup",
           email: email,
           otp: otp,
-          turnstileToken: readTurnstile(cfLookupId)
+
         });
-        resetTurnstile(cfLookupId);
+
         const cases = Array.isArray(data.cases) ? data.cases : (data.caseId ? [data] : []);
         renderLookup(cases);
         if (!cases.length) showBanner("lookup", "找不到此信箱的入園紀錄。", "ok");
@@ -3063,9 +2983,9 @@
         const data = await callGas({
           action: "sendOtp",
           email: email,
-          turnstileToken: readTurnstile(cfRegId)
+
         });
-        resetTurnstile(cfRegId);
+
         const masked = data.emailMasked || email;
         showBanner(3, "驗證碼已寄到 " + masked + "。若沒看到請檢查垃圾信件或促銷分頁。", "ok");
         startOtpCountdown(btn, "register");
@@ -3112,10 +3032,10 @@
           agreedAt: new Date().toISOString(),
           device: deviceInfo(),
           form: collectForm(),
-          turnstileToken: readTurnstile(cfRegId)
+
         };
         const data = await callGas(payload);
-        resetTurnstile(cfRegId);
+
         const caseId = pick(data, ["caseId", "case_id", "recordId", "ticketId", "id"]);
         const pdfUrl = pick(data, ["pdfUrl", "pdf_url", "pdf"]);
         const message = pick(data, ["message", "msg"]);
@@ -3306,7 +3226,7 @@
     restoreDraft();
     if (!petCards().length) addPet();
     syncReveals();
-    loadTurnstile();
+
     showPanel(1);
     if (/lookup/i.test(location.hash || "")) setMode("lookup");
 
