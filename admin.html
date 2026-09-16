@@ -626,10 +626,6 @@
         <label for="password">管理密碼</label>
         <input id="password" name="password" type="password" autocomplete="current-password" required />
       </div>
-      <div class="cf-box" id="cf-admin-wrap" hidden>
-        <p>安全驗證</p>
-        <div id="cf-admin"></div>
-      </div>
       <button class="btn" type="submit" id="login-button">安全登入</button>
       <p class="message" id="login-message" role="alert" hidden></p>
     </form>
@@ -771,9 +767,6 @@
     "use strict";
 
     const GAS_WEB_APP_URL = "https://nico-api-proxy.nicopetpark.workers.dev/ruyuan";
-    // 啟用 Turnstile 時，填入入園專用 Site Key；Secret 僅能放在 GAS Script Properties。
-    // 與入園客人表單共用同一組「公開」Site Key；Secret 僅存在 GAS 指令碼屬性。
-    const TURNSTILE_SITE_KEY = "0x4AAAAAAEzb3l3nV-QOhXvm";
     const SESSION_KEY = "nicopark-admin-session";
     const FETCH_TIMEOUT = 30000;
     const AUTO_REFRESH_MS = 30000;
@@ -787,55 +780,7 @@
     let lastSyncAt = null;
     let refreshInFlight = false;
     let lastUserActivityAt = Date.now();
-    let cfAdminWidgetId = null;
 
-    const $ = (selector, root) => (root || document).querySelector(selector);
-
-    function text(value) {
-      return value == null || value === "" ? "—" : String(value);
-    }
-
-    function value(id) {
-      const el = document.getElementById(id);
-      return el ? String(el.value || "").trim() : "";
-    }
-
-    function turnstileEnabled() {
-      return TURNSTILE_SITE_KEY && !/YOUR_|REPLACE_|請填/i.test(TURNSTILE_SITE_KEY);
-    }
-
-    function mountAdminTurnstile() {
-      if (!turnstileEnabled() || !window.turnstile || cfAdminWidgetId !== null) return;
-      $("#cf-admin-wrap").hidden = false;
-      cfAdminWidgetId = window.turnstile.render("#cf-admin", {
-        sitekey: TURNSTILE_SITE_KEY,
-        theme: "light",
-        size: "flexible"
-      });
-    }
-
-    function loadAdminTurnstile() {
-      if (!turnstileEnabled()) return;
-      $("#cf-admin-wrap").hidden = false;
-      if (window.turnstile) { mountAdminTurnstile(); return; }
-      if (document.querySelector('script[data-nicopark-admin-turnstile]')) return;
-      const script = document.createElement("script");
-      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-      script.async = true;
-      script.defer = true;
-      script.dataset.nicoparkAdminTurnstile = "true";
-      script.onload = mountAdminTurnstile;
-      document.head.appendChild(script);
-    }
-
-    function readAdminTurnstile() {
-      if (!turnstileEnabled()) return "";
-      return window.turnstile && cfAdminWidgetId !== null ? window.turnstile.getResponse(cfAdminWidgetId) : "";
-    }
-
-    function resetAdminTurnstile() {
-      if (window.turnstile && cfAdminWidgetId !== null) window.turnstile.reset(cfAdminWidgetId);
-    }
 
     async function api(payload) {
       const controller = new AbortController();
@@ -885,7 +830,7 @@
       const box = $("#login-message");
       box.hidden = !message;
       box.textContent = message || "";
-      loadAdminTurnstile();
+
       setTimeout(() => $("#username").focus(), 20);
     }
 
@@ -1438,16 +1383,14 @@
         const data = await api({
           action: "adminLogin",
           username: value("username"),
-          password: value("password"),
-          turnstileToken: readAdminTurnstile()
+          password: value("password")
         });
         setSession(data.token);
         $("#password").value = "";
         showApp();
         await refreshAll(true);
       } catch (error) {
-        resetAdminTurnstile();
-        box.textContent = error.message || "登入失敗";
+box.textContent = error.message || "登入失敗";
         box.hidden = false;
       } finally {
         button.disabled = false;
