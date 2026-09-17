@@ -638,6 +638,10 @@
     .unified-detail-item { padding:12px; border-radius:12px; background:#f8f3ed; }
     .unified-detail-item span { display:block; color:var(--muted); font-size:12px; font-weight:800; margin-bottom:4px; }
     .unified-detail-item strong { word-break:break-word; }
+    .unified-detail-section { margin:18px 0 0; border-top:1px solid var(--line); padding-top:18px; }
+    .unified-detail-section h3 { margin:0 0 11px; color:var(--cocoa); font-size:16px; }
+    .unified-detail-section .unified-detail-grid { margin:0; }
+    .unified-detail-links { display:flex; flex-wrap:wrap; gap:9px; margin:16px 0 0; }
     .unified-actions { display:grid; gap:14px; border-top:1px solid var(--line); margin-top:18px; padding-top:18px; }
     .unified-actions textarea { min-height:105px; resize:vertical; }
     @media (max-width:760px) {
@@ -759,8 +763,8 @@
 
       <div class="workspace">
         <section class="surface">
-          <h2>入園案件清單</h2>
-          <p class="surface-lede">點選案件即可看完整資料、更新狀態與店家備註。</p>
+          <h2>入園專屬案件清單</h2>
+          <p class="surface-lede">這一區只顯示入園案件；入館與寄宿請在上方「三站統一管理」點選案件，即可查看完整表單資料、更新狀態與店家備註。</p>
           <form class="filters" id="filter-form">
             <div class="field">
               <label for="case-query">搜尋</label>
@@ -1260,6 +1264,21 @@
       return item;
     }
 
+    function unifiedDetailSection(title, fields) {
+      const section = document.createElement("section");
+      section.className = "unified-detail-section";
+      const heading = document.createElement("h3");
+      heading.textContent = title;
+      const grid = document.createElement("div");
+      grid.className = "unified-detail-grid";
+      (fields || []).forEach((field) => {
+        if (!field || !field.label) return;
+        grid.appendChild(unifiedDetail(field.label, field.value));
+      });
+      section.append(heading, grid);
+      return section;
+    }
+
     function renderUnifiedDrawer(caseData) {
       $("#unified-drawer-title").textContent = unifiedText(caseData.serviceLabel) + "｜" + unifiedText(caseData.caseId);
       $("#unified-drawer-subtitle").textContent = "原始資料仍保存在「" + unifiedText(caseData.serviceLabel) + "」的獨立試算表。";
@@ -1275,6 +1294,18 @@
         unifiedDetail("電子信箱", caseData.email),
         unifiedDetail("特殊提醒", caseData.specialAlert || "無")
       );
+      host.appendChild(grid);
+
+      const links = document.createElement("div");
+      links.className = "unified-detail-links";
+      if (caseData.pdfUrl) links.appendChild(linkButton(caseData.pdfUrl, "開啟 PDF"));
+      if (caseData.folderUrl) links.appendChild(linkButton(caseData.folderUrl, "開啟雲端資料夾"));
+      if (links.childNodes.length) host.appendChild(links);
+
+      (caseData.detailSections || []).forEach((section) => {
+        if (!section || !(section.fields || []).length) return;
+        host.appendChild(unifiedDetailSection(section.title || "完整表單資料", section.fields));
+      });
       const actions = document.createElement("form");
       actions.className = "unified-actions";
       const statusField = document.createElement("div");
@@ -1330,7 +1361,7 @@
           save.textContent = "儲存店家處理內容";
         }
       });
-      host.append(grid, actions);
+      host.appendChild(actions);
     }
 
     function closeUnifiedDrawer() {
