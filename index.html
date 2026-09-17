@@ -317,7 +317,35 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-      margin-top: 12px;
+      margin: 18px 0 6px;
+    }
+    .btn.btn-add-pet {
+      min-height: 62px;
+      padding: 14px 20px;
+      border: 2px solid color-mix(in srgb, var(--cocoa) 72%, white);
+      background: linear-gradient(135deg, color-mix(in srgb, var(--cocoa) 92%, white), var(--cocoa-deep));
+      color: #fffdf9;
+      box-shadow: 0 12px 22px -12px color-mix(in srgb, var(--cocoa-deep) 80%, transparent), inset 0 1px 0 rgba(255,255,255,.22);
+      font-size: 1.02rem;
+      font-weight: 800;
+      letter-spacing: .03em;
+    }
+    .btn.btn-add-pet:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--cocoa-deep), var(--cocoa));
+      color: #fffdf9;
+      transform: translateY(-1px);
+    }
+    .btn-add-pet::before {
+      content: "+";
+      display: inline-grid;
+      place-items: center;
+      width: 27px;
+      height: 27px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.2);
+      border: 1px solid rgba(255,255,255,.45);
+      font-size: 1.35rem;
+      line-height: 1;
     }
 
     .case-list {
@@ -1467,7 +1495,7 @@
 
         <div id="pets-root"></div>
         <div class="pet-actions">
-          <button type="button" class="btn btn-ghost" id="add-pet">新增毛孩</button>
+          <button type="button" class="btn btn-add-pet" id="add-pet" aria-label="新增另一隻毛孩">新增另一隻毛孩</button>
         </div>
 
         <div class="actions">
