@@ -763,24 +763,33 @@
 
       <div class="workspace">
         <section class="surface">
-          <h2>入園專屬案件清單</h2>
-          <p class="surface-lede">這一區只顯示入園案件；入館與寄宿請在上方「三站統一管理」點選案件，即可查看完整表單資料、更新狀態與店家備註。</p>
+          <h2 id="case-list-title">全部案件清單</h2>
+          <p class="surface-lede" id="case-list-lede">可直接切換入園、入館、寄宿；點選任何案件即可查看完整表單資料、更新狀態與店家備註。</p>
           <form class="filters" id="filter-form">
             <div class="field">
-              <label for="case-query">搜尋</label>
-              <input id="case-query" type="search" placeholder="案件、客戶、電話或毛孩" />
+              <label for="case-service">服務別</label>
+              <select id="case-service">
+                <option value="all" selected>全部服務</option>
+                <option value="ruyuan">入園</option>
+                <option value="ruguan">入館</option>
+                <option value="qisu">寄宿</option>
+              </select>
             </div>
             <div class="field">
+              <label for="case-query">搜尋案件</label>
+              <input id="case-query" type="search" placeholder="案件、飼主、電話或毛孩" />
+            </div>
+            <div class="field" id="ruyuan-status-field">
               <label for="status-filter">狀態</label>
               <select id="status-filter">
                 <option value="">全部</option>
               </select>
             </div>
-            <div class="field date-field">
+            <div class="field date-field" id="ruyuan-date-from-field">
               <label for="date-from">開始日期</label>
               <input id="date-from" type="date" />
             </div>
-            <div class="field date-field">
+            <div class="field date-field" id="ruyuan-date-to-field">
               <label for="date-to">結束日期</label>
               <input id="date-to" type="date" />
             </div>
@@ -792,6 +801,7 @@
             <table>
               <thead>
                 <tr>
+                  <th>服務</th>
                   <th>送出時間</th>
                   <th>案件／客戶</th>
                   <th>飼主</th>
@@ -1063,6 +1073,99 @@
       $("#result-note").textContent = data.truncated ? "目前顯示最新 200 筆" : "";
     }
 
+    function selectedCaseService() { return value("case-service") || "all"; }
+
+    function setCaseListMode(service) {
+      const labels = { all: "全部", ruyuan: "入園", ruguan: "入館", qisu: "寄宿" };
+      const label = labels[service] || "全部";
+      const isRuyuan = service === "ruyuan";
+      $("#case-list-title").textContent = label + "案件清單";
+      $("#case-list-lede").textContent = isRuyuan
+        ? "入園案件可依狀態與日期篩選；點選案件即可查看完整資料、更新狀態與店家備註。"
+        : "目前顯示" + label + "案件；點選任何案件即可查看完整表單資料、更新狀態與店家備註。";
+      $("#ruyuan-status-field").hidden = !isRuyuan;
+      $("#ruyuan-date-from-field").hidden = !isRuyuan;
+      $("#ruyuan-date-to-field").hidden = !isRuyuan;
+    }
+
+    function renderSwitchableUnifiedCases(cases) {
+      const tbody = $("#case-tbody");
+      const mobile = $("#mobile-cases");
+      tbody.replaceChildren();
+      mobile.replaceChildren();
+      $("#table-empty").hidden = cases.length > 0;
+      cases.forEach((caseData) => {
+        const row = document.createElement("tr");
+        row.className = "unified-row";
+        row.tabIndex = 0;
+        const serviceCell = document.createElement("td");
+        const tag = document.createElement("span");
+        tag.className = "service-tag";
+        tag.textContent = unifiedText(caseData.serviceLabel);
+        serviceCell.appendChild(tag);
+        const caseCell = document.createElement("td");
+        const caseStrong = document.createElement("strong");
+        caseStrong.textContent = unifiedText(caseData.caseId || "—");
+        const submittedCell = unifiedCell(caseData.submittedAt);
+        const ownerCell = unifiedCell(caseData.ownerName);
+        const petCell = unifiedCell((caseData.petNames || []).join("、"));
+        if (caseData.specialAlert) {
+          const alert = document.createElement("span");
+          alert.className = "care-alert";
+          alert.textContent = "特殊提醒：" + unifiedText(caseData.specialAlert);
+          petCell.appendChild(alert);
+        }
+        const statusCell = document.createElement("td");
+        statusCell.appendChild(statusBadge(caseData.status));
+        caseCell.appendChild(caseStrong);
+        row.append(serviceCell, submittedCell, caseCell, ownerCell, petCell, statusCell);
+        const open = () => openUnifiedCase(caseData.service, caseData.caseId);
+        row.addEventListener("click", open);
+        row.addEventListener("keydown", (event) => { if (event.key === "Enter") open(); });
+        tbody.appendChild(row);
+
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "case-card";
+        const top = document.createElement("div");
+        top.className = "case-card-top";
+        const title = document.createElement("strong");
+        title.textContent = unifiedText(caseData.serviceLabel) + " · " + unifiedText(caseData.ownerName) + "／" + (caseData.petNames || []).join("、");
+        top.append(title, statusBadge(caseData.status));
+        const meta = document.createElement("p");
+        meta.textContent = unifiedText(caseData.caseId) + "　" + unifiedText(caseData.submittedAt);
+        card.append(top, meta);
+        if (caseData.specialAlert) {
+          const alert = document.createElement("span");
+          alert.className = "care-alert";
+          alert.textContent = "特殊提醒：" + unifiedText(caseData.specialAlert);
+          card.appendChild(alert);
+        }
+        card.addEventListener("click", open);
+        mobile.appendChild(card);
+      });
+    }
+
+    async function loadSwitchableCaseList(silent) {
+      const service = selectedCaseService();
+      setCaseListMode(service);
+      if (service === "ruyuan") {
+        return loadCases();
+      }
+      if (!silent) $("#result-count").textContent = "載入中…";
+      const data = await auth("adminUnifiedSnapshot", {
+        service: service,
+        query: value("case-query"),
+        limit: 200
+      });
+      unifiedData = data;
+      applyUnifiedData(data);
+      renderSwitchableUnifiedCases(data.cases || []);
+      $("#result-count").textContent = "顯示 " + unifiedText((data.cases || []).length) + "／" + unifiedText(data.totalMatched || 0) + " 筆案件";
+      $("#result-note").textContent = data.truncated ? "僅顯示前 200 筆，請用搜尋縮小範圍。" : "點選案件即可查看完整資料。";
+      return data;
+    }
+
     function renderStatusOverview(counts) {
       const host = $("#status-overview");
       host.replaceChildren();
@@ -1155,6 +1258,7 @@
       setUnifiedState("ready", "三站資料已連動");
       renderUnifiedServices(data.services || []);
       renderUnifiedCases(data.cases || []);
+      if (selectedCaseService() !== "ruyuan") renderSwitchableUnifiedCases(data.cases || []);
     }
 
     function renderUnifiedServices(services) {
@@ -1378,7 +1482,10 @@
       setLiveState("loading", "Google 試算表同步中");
       try {
         await loadSnapshot(silent);
-        try { await loadUnifiedSnapshot(silent); }
+        try {
+          await loadUnifiedSnapshot(silent);
+          setCaseListMode(selectedCaseService());
+        }
         catch (unifiedError) {
           if (isAuthError(unifiedError)) return showLogin(unifiedError.message);
           setUnifiedState("error", "三站總覽暫時無法載入");
@@ -1410,6 +1517,7 @@
       cases.forEach((item) => {
         const row = document.createElement("tr");
         const cells = [
+          "入園",
           text(item.submittedAt),
           "",
           "",
@@ -1421,7 +1529,13 @@
           td.textContent = cellText;
           row.appendChild(td);
         });
-        const caseCell = row.children[1];
+        const serviceCell = row.children[0];
+        const serviceTag = document.createElement("span");
+        serviceTag.className = "service-tag";
+        serviceTag.textContent = "入園";
+        serviceCell.replaceChildren(serviceTag);
+
+        const caseCell = row.children[2];
         caseCell.replaceChildren();
         const caseStrong = document.createElement("strong");
         caseStrong.textContent = item.caseId || "—";
@@ -1429,7 +1543,7 @@
         customerSmall.textContent = item.customerId || "尚無客戶編號";
         caseCell.append(caseStrong, customerSmall);
 
-        const ownerCell = row.children[2];
+        const ownerCell = row.children[3];
         ownerCell.replaceChildren();
         const ownerStrong = document.createElement("strong");
         ownerStrong.textContent = item.ownerName || "—";
@@ -1441,10 +1555,10 @@
           const alert = document.createElement("span");
           alert.className = "care-alert";
           alert.textContent = "特殊提醒：" + item.specialAlert;
-          row.children[3].appendChild(alert);
+          row.children[4].appendChild(alert);
         }
 
-        row.children[4].replaceChildren(statusBadge(item.status));
+        row.children[5].replaceChildren(statusBadge(item.status));
         row.addEventListener("click", () => openCase(item.caseId));
         tbody.appendChild(row);
 
@@ -1805,10 +1919,13 @@ box.textContent = loginErrorMessage(error);
     $("#refresh-button").addEventListener("click", () => refreshAll(false));
     $("#filter-form").addEventListener("submit", (event) => {
       event.preventDefault();
-      loadCases().catch((error) => {
+      loadSwitchableCaseList(false).catch((error) => {
         if (isAuthError(error)) showLogin(error.message);
         else toast(error.message || "查詢失敗");
       });
+    });
+    $("#case-service").addEventListener("change", () => {
+      $("#filter-form").dispatchEvent(new Event("submit", { cancelable: true }));
     });
     $("#customer-form").addEventListener("submit", (event) => {
       event.preventDefault();
