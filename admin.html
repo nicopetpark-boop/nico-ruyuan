@@ -637,6 +637,7 @@
     .unified-row { cursor:pointer; }
     .unified-row:hover { background:#fbf5ef; }
     .unified-alert { color:#a8423f; font-weight:800; max-width:280px; white-space:normal; }
+    .unified-note { display:block; margin-top:6px; color:#5F5146; font-weight:800; max-width:280px; white-space:normal; }
     .unified-empty { padding:20px 0 4px; color:var(--muted); }
     .unified-detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:16px 0; }
     .unified-detail-item { padding:12px; border-radius:12px; background:#f8f3ed; }
@@ -747,7 +748,7 @@
           <p class="result-meta"><span id="unified-result-count">載入中…</span><span id="unified-result-note"></span></p>
           <div class="table-wrap unified-table">
             <table>
-              <thead><tr><th>服務</th><th>送出時間</th><th>案件</th><th>飼主／毛孩</th><th>狀態</th><th>特殊提醒</th></tr></thead>
+              <thead><tr><th>服務</th><th>送出時間</th><th>案件</th><th>飼主／毛孩</th><th>狀態</th><th>特殊提醒／店員備註</th></tr></thead>
               <tbody id="unified-tbody"></tbody>
             </table>
             <p class="unified-empty" id="unified-empty" hidden>目前沒有符合條件的案件。</p>
@@ -1353,6 +1354,26 @@
       return td;
     }
 
+    function unifiedNoticeText(caseData) {
+      const notices = [];
+      if (caseData.specialAlert) notices.push("特殊提醒：" + unifiedText(caseData.specialAlert));
+      if (caseData.note) notices.push("店員備註：" + unifiedText(caseData.note));
+      return notices;
+    }
+
+    function unifiedNoticeCell(caseData) {
+      const td = document.createElement("td");
+      const notices = unifiedNoticeText(caseData);
+      if (!notices.length) { td.textContent = "—"; return td; }
+      notices.forEach((notice, index) => {
+        const line = document.createElement("span");
+        line.className = index === 0 && caseData.specialAlert ? "unified-alert" : "unified-note";
+        line.textContent = notice;
+        td.appendChild(line);
+      });
+      return td;
+    }
+
     function renderUnifiedCases(cases) {
       const tbody = $("#unified-tbody");
       const mobile = $("#unified-mobile-cases");
@@ -1373,7 +1394,7 @@
           unifiedCell(caseData.caseId),
           unifiedCell(unifiedText(caseData.ownerName) + "／" + (caseData.petNames || []).join("、")),
           unifiedCell(caseData.status),
-          unifiedCell(caseData.specialAlert || "—", caseData.specialAlert ? "unified-alert" : "")
+          unifiedNoticeCell(caseData)
         );
         tbody.appendChild(row);
 
@@ -1383,7 +1404,8 @@
         const line1 = document.createElement("span");
         line1.textContent = unifiedText(caseData.caseId) + " · " + unifiedText(caseData.status);
         const line2 = document.createElement("span");
-        line2.textContent = caseData.specialAlert ? "特殊提醒：" + unifiedText(caseData.specialAlert) : "無特殊提醒";
+        const notices = unifiedNoticeText(caseData);
+        line2.textContent = notices.length ? notices.join("　") : "無特殊提醒／店員備註";
         card.append(title, line1, line2);
         mobile.appendChild(card);
       });
