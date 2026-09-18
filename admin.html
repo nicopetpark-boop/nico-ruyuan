@@ -986,9 +986,9 @@
     function setSession(sessionToken) {
       token = sessionToken || "";
       lastUserActivityAt = Date.now();
-      if (token) sessionStorage.setItem(SESSION_KEY, token);
+      if (token) localStorage.setItem(SESSION_KEY, token);
       else {
-        sessionStorage.removeItem(SESSION_KEY);
+        localStorage.removeItem(SESSION_KEY);
         stopAutoRefresh();
       }
     }
@@ -1988,10 +1988,10 @@ box.textContent = loginErrorMessage(error);
     ["pointerdown", "keydown", "touchstart", "scroll"].forEach((eventName) => {
       document.addEventListener(eventName, noteUserActivity, { passive: true });
     });
-    window.setInterval(enforceIdleLogout, 30000);
+    // 持續登入：僅由手動登出、清除網站資料或密碼重設撤銷。
 
     clearSensitiveUrlParams();
-    token = sessionStorage.getItem(SESSION_KEY) || "";
+    token = localStorage.getItem(SESSION_KEY) || "";
     if (token) {
       showApp();
       refreshAll(true);
