@@ -841,9 +841,9 @@
             <p class="surface-lede">原始資料與公開表單。</p>
             <div class="quick-links">
               <a id="overview-link" href="#" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">開啟業主總覽 ↗</a>
-              <a id="sheet-link" href="#" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">開啟 Google 試算表 ↗</a>
-              <a href="https://ruguan.niconicopet.com/" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">開啟入館客人填寫頁 ↗</a>
-              <a href="https://qisu.niconicopet.com/" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">開啟寄宿客人填寫頁 ↗</a>
+              <a id="sheet-link" href="#" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">開啟入園 Google 試算表 ↗</a>
+              <a id="ruguan-sheet-link" href="#" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" hidden>開啟入館 Google 試算表 ↗</a>
+              <a id="qisu-sheet-link" href="#" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" hidden>開啟寄宿 Google 試算表 ↗</a>
               <a href="index.html" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">開啟客人填寫頁 ↗</a>
             </div>
           </section>
@@ -1085,8 +1085,18 @@
       $("#admin-name").textContent = (data.username || "管理員") + " 已登入";
       const sheetUrl = trustedAdminLink(data.sheetUrl);
       const overviewUrl = trustedAdminLink(data.overviewUrl);
+      const ruguanSheetUrl = trustedAdminLink(data.ruguanSheetUrl);
+      const qisuSheetUrl = trustedAdminLink(data.qisuSheetUrl);
       if (sheetUrl) $("#sheet-link").href = sheetUrl;
       if (overviewUrl) $("#overview-link").href = overviewUrl;
+      if (ruguanSheetUrl) {
+        $("#ruguan-sheet-link").href = ruguanSheetUrl;
+        $("#ruguan-sheet-link").hidden = false;
+      }
+      if (qisuSheetUrl) {
+        $("#qisu-sheet-link").href = qisuSheetUrl;
+        $("#qisu-sheet-link").hidden = false;
+      }
 
       const status = $("#status-filter");
       if (status.options.length === 1) {
