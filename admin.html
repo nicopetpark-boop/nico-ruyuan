@@ -1494,9 +1494,9 @@
       actions.className = "unified-actions";
       const statusField = document.createElement("div");
       statusField.className = "field";
-      const statusLabel = document.createElement("label");
-      statusLabel.htmlFor = "unified-case-status";
-      statusLabel.textContent = "案件狀態";
+      const statusLabelElement = document.createElement("label");
+      statusLabelElement.htmlFor = "unified-case-status";
+      statusLabelElement.textContent = "案件狀態";
       const status = document.createElement("select");
       status.id = "unified-case-status";
       const allowed = (unifiedData && unifiedData.statuses) || ["待確認", "待審核", "待聯繫", "已確認", "已完成", "已取消"];
@@ -1507,7 +1507,7 @@
         option.selected = name === caseData.status;
         status.appendChild(option);
       });
-      statusField.append(statusLabel, status);
+      statusField.append(statusLabelElement, status);
       const noteField = document.createElement("div");
       noteField.className = "field";
       const noteLabel = document.createElement("label");
@@ -1805,9 +1805,9 @@
       controls.className = "update-grid";
       const statusField = document.createElement("div");
       statusField.className = "field";
-      const statusLabel = document.createElement("label");
-      statusLabel.htmlFor = "detail-status";
-      statusLabel.textContent = "案件狀態";
+      const statusLabelElement = document.createElement("label");
+      statusLabelElement.htmlFor = "detail-status";
+      statusLabelElement.textContent = "案件狀態";
       const select = document.createElement("select");
       select.id = "detail-status";
       ["待審核", "待聯繫", "已確認", "已完成", "已取消"].forEach((name) => {
@@ -1817,7 +1817,7 @@
         option.selected = name === (data.status || "待審核");
         select.appendChild(option);
       });
-      statusField.append(statusLabel, select);
+      statusField.append(statusLabelElement, select);
       const noteField = document.createElement("div");
       noteField.className = "field";
       const noteLabel = document.createElement("label");
