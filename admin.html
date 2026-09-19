@@ -302,8 +302,8 @@
 
     .workspace {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 300px;
-      gap: 16px;
+      grid-template-columns: minmax(0, 1fr) minmax(330px, 360px);
+      gap: 18px;
       align-items: start;
     }
     .surface {
@@ -427,13 +427,19 @@
     }
     .customer-item strong { display: block; color: var(--cocoa-deep); font-size: .84rem; }
     .customer-item span { display: block; margin-top: 2px; color: var(--muted); font-size: .72rem; }
-    .quick-links { display: grid; gap: 8px; }
+    .side-column { display: grid; gap: 12px; align-content: start; }
+    .side-card + .side-card { margin-top: 0; }
+    .quick-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     .quick-links a {
+      min-height: 48px;
       border-radius: var(--radius-md);
       padding: 10px 12px;
+      display: flex;
+      align-items: center;
       text-decoration: none;
       background: var(--warm);
-      font-size: .8rem;
+      font-size: .78rem;
+      line-height: 1.35;
     }
     .status-overview { display: grid; gap: 7px; }
     .status-jump {
@@ -570,10 +576,11 @@
 
     @media (max-width: 900px) {
       .workspace { grid-template-columns: 1fr; }
-      .side-column { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-      .side-card + .side-card { margin-top: 0; }
+      .side-column { grid-template-columns: 1fr 1fr; }
+      .side-card:last-child { grid-column: 1 / -1; }
       .filters { grid-template-columns: 1fr 135px 1fr 1fr auto; }
       .metrics { grid-template-columns: repeat(3, 1fr); }
+      .quick-links { grid-template-columns: 1fr; }
     }
     @media (max-width: 680px) {
       .topbar-inner, main { width: min(100% - 20px, 1180px); }
@@ -941,6 +948,9 @@
     function text(input) {
       return String(input == null ? "" : input);
     }
+    function statusLabel(status) {
+      return status === "已完成" ? "已做完" : text(status || "待審核");
+    }
     function loginErrorMessage(error) {
       const message = String(error && error.message || "");
       if (/帳號|密碼|登入失敗|驗證失敗|無效/.test(message)) {
@@ -1104,7 +1114,7 @@
         (data.statuses || []).forEach((name) => {
           const option = document.createElement("option");
           option.value = name;
-          option.textContent = name;
+          option.textContent = statusLabel(name);
           status.appendChild(option);
         });
       }
@@ -1223,7 +1233,7 @@
         button.type = "button";
         button.className = "status-jump";
         const label = document.createElement("span");
-        label.textContent = name;
+        label.textContent = statusLabel(name);
         const count = document.createElement("strong");
         count.textContent = Number(counts[name] || 0);
         button.append(label, count);
@@ -1393,7 +1403,7 @@
           unifiedCell(caseData.submittedAt),
           unifiedCell(caseData.caseId),
           unifiedCell(unifiedText(caseData.ownerName) + "／" + (caseData.petNames || []).join("、")),
-          unifiedCell(caseData.status),
+          unifiedCell(statusLabel(caseData.status)),
           unifiedNoticeCell(caseData)
         );
         tbody.appendChild(row);
@@ -1402,7 +1412,7 @@
         const title = document.createElement("strong");
         title.textContent = unifiedText(caseData.serviceLabel) + " · " + unifiedText(caseData.ownerName) + "／" + (caseData.petNames || []).join("、");
         const line1 = document.createElement("span");
-        line1.textContent = unifiedText(caseData.caseId) + " · " + unifiedText(caseData.status);
+        line1.textContent = unifiedText(caseData.caseId) + " · " + statusLabel(caseData.status);
         const line2 = document.createElement("span");
         const notices = unifiedNoticeText(caseData);
         line2.textContent = notices.length ? notices.join("　") : "無特殊提醒／店員備註";
@@ -1493,7 +1503,7 @@
       allowed.forEach((name) => {
         const option = document.createElement("option");
         option.value = name;
-        option.textContent = name;
+        option.textContent = statusLabel(name);
         option.selected = name === caseData.status;
         status.appendChild(option);
       });
@@ -1660,7 +1670,7 @@
       const badge = document.createElement("span");
       badge.className = "status";
       badge.dataset.status = status || "待審核";
-      badge.textContent = status || "待審核";
+      badge.textContent = statusLabel(status);
       return badge;
     }
 
@@ -1803,7 +1813,7 @@
       ["待審核", "待聯繫", "已確認", "已完成", "已取消"].forEach((name) => {
         const option = document.createElement("option");
         option.value = name;
-        option.textContent = name;
+        option.textContent = statusLabel(name);
         option.selected = name === (data.status || "待審核");
         select.appendChild(option);
       });
