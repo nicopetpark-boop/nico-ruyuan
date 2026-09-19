@@ -1441,11 +1441,53 @@
       const item = document.createElement("div");
       item.className = "unified-detail-item";
       const title = document.createElement("span");
-      title.textContent = label;
+      title.textContent = readableDetailLabel(label);
       const body = document.createElement("strong");
-      body.textContent = unifiedText(detail || "—");
+      body.textContent = readableDetailValue(label, detail);
       item.append(title, body);
       return item;
+    }
+
+    function isClientDeviceField(label) {
+      return /^(客戶端裝置資訊|客戶端資訊|裝置資訊|裝置資料)$/u.test(unifiedText(label).trim());
+    }
+
+    function readableDetailLabel(label) {
+      return isClientDeviceField(label) ? "填寫裝置" : unifiedText(label);
+    }
+
+    function readableDetailValue(label, detail) {
+      if (!isClientDeviceField(label)) return unifiedText(detail || "—");
+
+      let device = detail;
+      if (typeof device === "string") {
+        try { device = JSON.parse(device); }
+        catch (error) { return "已記錄填寫裝置"; }
+      }
+      if (!device || typeof device !== "object") return "已記錄填寫裝置";
+
+      const ua = unifiedText(device.ua || device.userAgent || "");
+      let browser = "";
+      if (/Edg(?:e|A|iOS)?\//i.test(ua)) browser = "Edge 瀏覽器";
+      else if (/OPR\//i.test(ua)) browser = "Opera 瀏覽器";
+      else if (/Firefox\//i.test(ua)) browser = "Firefox 瀏覽器";
+      else if (/CriOS\//i.test(ua)) browser = "Chrome 瀏覽器";
+      else if (/Chrome\//i.test(ua) && !/Edg\//i.test(ua)) browser = "Chrome 瀏覽器";
+      else if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) browser = "Safari 瀏覽器";
+
+      let platform = "";
+      if (/iPhone/i.test(ua)) platform = "iPhone";
+      else if (/iPad/i.test(ua)) platform = "iPad";
+      else if (/Android/i.test(ua)) platform = "Android 裝置";
+      else if (/Windows/i.test(ua)) platform = "Windows 電腦";
+      else if (/Macintosh|Mac OS X/i.test(ua)) platform = "macOS 電腦";
+
+      const rawLanguage = unifiedText(device.lang || device.language || "").replace(/_/g, "-");
+      const language = /^zh-(TW|Hant)$/i.test(rawLanguage) ? "繁體中文" : rawLanguage;
+      const rawTimeZone = unifiedText(device.tz || device.timeZone || "");
+      const timeZone = rawTimeZone === "Asia/Taipei" ? "台北時區" : rawTimeZone;
+      const parts = [browser, platform, language, timeZone].filter(Boolean);
+      return parts.length ? parts.join("｜") : "已記錄填寫裝置";
     }
 
     function unifiedDetailSection(title, fields) {
