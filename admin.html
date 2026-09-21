@@ -1293,7 +1293,7 @@
 
     function unifiedMetric(id, value) { $(id).textContent = unifiedText(value == null ? "—" : value); }
 
-    function loadUnifiedSnapshot(silent) {
+    function loadUnifiedSnapshot(silent, options = {}) {
       if (!silent) $("#unified-result-count").textContent = "載入中…";
       return auth("adminUnifiedSnapshot", {
         service: value("unified-service"),
@@ -1301,12 +1301,13 @@
         limit: 200
       }).then((data) => {
         unifiedData = data;
-        applyUnifiedData(data);
+        applyUnifiedData(data, options);
         return data;
       });
     }
 
-    function applyUnifiedData(data) {
+    function applyUnifiedData(data, options = {}) {
+      const updateSwitchableList = options.updateSwitchableList !== false;
       const summary = data.summary || {};
       unifiedMetric("#unified-today", summary.today);
       unifiedMetric("#unified-pending", summary.pending);
@@ -1317,7 +1318,7 @@
       setUnifiedState("ready", "三站資料已連動");
       renderUnifiedServices(data.services || []);
       renderUnifiedCases(data.cases || []);
-      if (selectedCaseService() !== "ruyuan") renderSwitchableUnifiedCases(data.cases || []);
+      if (updateSwitchableList && selectedCaseService() !== "ruyuan") renderSwitchableUnifiedCases(data.cases || []);
     }
 
     function renderUnifiedServices(services) {
@@ -1603,10 +1604,15 @@
       button.disabled = true;
       setLiveState("loading", "Google 試算表同步中");
       try {
-        await loadSnapshot(silent);
+        // Keep the overview and the active case list separate.  The legacy
+        // Ruyuan snapshot writes #result-count and must not overwrite an
+        // active all-services/Ruguan/Qisu search during background refresh.
+        await loadDashboard();
         try {
-          await loadUnifiedSnapshot(silent);
-          setCaseListMode(selectedCaseService());
+          await loadUnifiedSnapshot(silent, { updateSwitchableList: false });
+          // Re-run exactly the service and query the staff member is viewing.
+          // This keeps the count and table from the same response.
+          await loadSwitchableCaseList(silent);
         }
         catch (unifiedError) {
           if (isAuthError(unifiedError)) return showLogin(unifiedError.message);
