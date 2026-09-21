@@ -836,10 +836,10 @@
             <p class="focus-note" id="focus-note">正在整理今日重點…</p>
           </section>
           <section class="surface side-card">
-            <h2>找舊客</h2>
-            <p class="surface-lede">輸入客戶編號、姓名、手機或毛孩名字。</p>
+            <h2>找三站舊客</h2>
+            <p class="surface-lede">可查入園、入館、寄宿的客戶編號、姓名、手機或毛孩名字。</p>
             <form class="customer-search" id="customer-form">
-              <input id="customer-query" type="search" placeholder="CUS-XXXXXX" />
+              <input id="customer-query" type="search" placeholder="姓名、電話、毛孩或案件編號" />
               <button class="btn" type="submit">找</button>
             </form>
             <div class="customer-results" id="customer-results"></div>
@@ -1944,28 +1944,33 @@
       note.textContent = "搜尋中…";
       host.appendChild(note);
       try {
-        const data = await auth("adminFindCustomers", { query: query });
+        const data = await auth("adminUnifiedSnapshot", {
+          service: "all",
+          query: query,
+          limit: 50
+        });
         host.replaceChildren();
-        if (!(data.customers || []).length) {
-          note.textContent = "找不到符合的舊客。";
+        const cases = data.cases || [];
+        if (!cases.length) {
+          note.textContent = "找不到符合的三站舊客。";
           host.appendChild(note);
           return;
         }
-        data.customers.forEach((customer) => {
+        note.textContent = "找到 " + cases.length + " 筆符合的三站案件。";
+        host.appendChild(note);
+        cases.forEach((caseData) => {
           const item = document.createElement("button");
           item.type = "button";
           item.className = "customer-item";
           const title = document.createElement("strong");
-          title.textContent = text(customer.ownerName) + " · " + text(customer.customerId);
+          title.textContent = unifiedText(caseData.serviceLabel) + " · " + unifiedText(caseData.ownerName || "未填寫飼主");
           const pets = document.createElement("span");
-          pets.textContent = (customer.petNames || []).join("、") + " · " + text(customer.phone);
-          const count = document.createElement("span");
-          count.textContent = text(customer.caseCount) + " 筆案件 · 最近 " + text(customer.latestAt);
-          item.append(title, pets, count);
+          pets.textContent = unifiedText(caseData.caseId) + " · " + (caseData.petNames || []).join("、") + " · " + unifiedText(caseData.phone || "未提供電話");
+          const status = document.createElement("span");
+          status.textContent = statusLabel(caseData.status) + " · " + unifiedText(caseData.submittedAt);
+          item.append(title, pets, status);
           item.addEventListener("click", () => {
-            $("#case-query").value = customer.customerId || customer.phone || customer.ownerName || "";
-            $("#filter-form").dispatchEvent(new Event("submit", { cancelable: true }));
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            openUnifiedCase(caseData.service, caseData.caseId);
           });
           host.appendChild(item);
         });
