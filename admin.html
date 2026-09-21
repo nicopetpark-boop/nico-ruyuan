@@ -761,7 +761,7 @@
           <div class="service-overview" id="unified-services"></div>
           <form class="unified-filters" id="unified-filter-form">
             <div class="field">
-              <label for="unified-query">搜尋三站案件</label>
+              <label for="unified-query">搜尋案件</label>
               <input id="unified-query" type="search" placeholder="輸入即可搜尋；英文不分大小寫" />
             </div>
             <div class="field">
@@ -773,7 +773,7 @@
                 <option value="qisu">寄宿</option>
               </select>
             </div>
-            <button class="btn secondary" type="submit">查詢三站</button>
+            <button class="btn secondary" type="submit">套用篩選</button>
           </form>
           <p class="result-meta"><span id="unified-result-count">載入中…</span><span id="unified-result-note"></span></p>
           <div class="table-wrap unified-table">
@@ -1344,14 +1344,23 @@
 
     function applyUnifiedData(data, options = {}) {
       const updateSwitchableList = options.updateSwitchableList !== false;
+      const selectedService = value("unified-service") || "all";
+      const selectedServiceLabel = {
+        all: "三站",
+        ruyuan: "入園",
+        ruguan: "入館",
+        qisu: "寄宿"
+      }[selectedService] || "案件";
       const summary = data.summary || {};
       unifiedMetric("#unified-today", summary.today);
       unifiedMetric("#unified-pending", summary.pending);
       unifiedMetric("#unified-attention", summary.attention);
       unifiedMetric("#unified-total", summary.total);
       $("#unified-result-count").textContent = "顯示 " + unifiedText((data.cases || []).length) + "／" + unifiedText(data.totalMatched || 0) + " 筆案件";
-      $("#unified-result-note").textContent = data.truncated ? "僅顯示前 200 筆，請用搜尋縮小範圍。" : "三站資料已分流載入";
-      setUnifiedState("ready", "三站資料已連動");
+      $("#unified-result-note").textContent = data.truncated
+        ? "僅顯示前 200 筆，請用搜尋縮小範圍。"
+        : selectedServiceLabel + "資料已更新";
+      setUnifiedState("ready", selectedServiceLabel + "資料已更新");
       renderUnifiedServices(data.services || []);
       renderUnifiedCases(data.cases || []);
       if (updateSwitchableList && selectedCaseService() !== "ruyuan") renderSwitchableUnifiedCases(data.cases || []);
