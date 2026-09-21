@@ -306,6 +306,11 @@
       gap: 18px;
       align-items: start;
     }
+    .management-workspace { display: block; }
+    .management-workspace .side-column {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-items: stretch;
+    }
     .surface {
       border-radius: var(--radius-xl);
       background: var(--paper);
@@ -474,6 +479,22 @@
       background: #F5EADF;
       font-size: .75rem;
     }
+    .operation-list {
+      display: grid;
+      gap: 9px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .operation-list li {
+      border-radius: 12px;
+      padding: 10px 11px;
+      background: var(--warm);
+      color: var(--muted);
+      font-size: .76rem;
+      line-height: 1.45;
+    }
+    .operation-list strong { color: var(--cocoa); }
 
     .drawer {
       position: fixed;
@@ -581,6 +602,8 @@
       .filters { grid-template-columns: 1fr 135px 1fr 1fr auto; }
       .metrics { grid-template-columns: repeat(3, 1fr); }
       .quick-links { grid-template-columns: 1fr; }
+      .management-workspace .side-column { grid-template-columns: 1fr 1fr; }
+      .management-workspace .side-card:last-child { grid-column: 1 / -1; }
     }
     @media (max-width: 680px) {
       .topbar-inner, main { width: min(100% - 20px, 1180px); }
@@ -773,8 +796,8 @@
         <article class="metric" style="--tone:#DDD0C3"><span>全部案件</span><strong id="stat-total">—</strong></article>
       </section>
 
-      <div class="workspace">
-        <section class="surface">
+      <div class="workspace management-workspace">
+        <section class="surface" hidden aria-hidden="true">
           <h2 id="case-list-title">全部案件清單</h2>
           <p class="surface-lede" id="case-list-lede">可直接切換入園、入館、寄宿；輸入即可搜尋，英文不分大小寫。點選任何案件即可查看完整表單資料、更新狀態與店家備註。</p>
           <form class="filters" id="filter-form">
@@ -836,13 +859,13 @@
             <p class="focus-note" id="focus-note">正在整理今日重點…</p>
           </section>
           <section class="surface side-card">
-            <h2>找三站舊客</h2>
-            <p class="surface-lede">可查入園、入館、寄宿的客戶編號、姓名、手機或毛孩名字。</p>
-            <form class="customer-search" id="customer-form">
-              <input id="customer-query" type="search" placeholder="姓名、電話、毛孩或案件編號" />
-              <button class="btn" type="submit">找</button>
-            </form>
-            <div class="customer-results" id="customer-results"></div>
+            <h2>案件處理方式</h2>
+            <p class="surface-lede">所有案件搜尋已集中在頁面最上方，避免重複查詢與畫面跳動。</p>
+            <ol class="operation-list">
+              <li><strong>1．搜尋</strong>　輸入飼主、電話、毛孩或案件編號；英文不分大小寫。</li>
+              <li><strong>2．查看</strong>　點選案件，即可開啟三站完整表單、PDF 與特殊提醒。</li>
+              <li><strong>3．處理</strong>　更新案件狀態與店員內部備註後儲存。</li>
+            </ol>
           </section>
           <section class="surface side-card">
             <h2>管理捷徑</h2>
@@ -1247,23 +1270,14 @@
       const host = $("#status-overview");
       host.replaceChildren();
       ["待審核", "待聯繫", "已確認", "已完成", "已取消"].forEach((name) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "status-jump";
+        const item = document.createElement("div");
+        item.className = "status-jump";
         const label = document.createElement("span");
         label.textContent = statusLabel(name);
         const count = document.createElement("strong");
         count.textContent = Number(counts[name] || 0);
-        button.append(label, count);
-        button.addEventListener("click", () => {
-          $("#status-filter").value = name;
-          loadCases().catch((error) => {
-            if (isAuthError(error)) showLogin(error.message);
-            else toast(error.message || "查詢失敗");
-          });
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        });
-        host.appendChild(button);
+        item.append(label, count);
+        host.appendChild(item);
       });
     }
 
@@ -1626,15 +1640,12 @@
       button.disabled = true;
       setLiveState("loading", "Google 試算表同步中");
       try {
-        // Keep the overview and the active case list separate.  The legacy
-        // Ruyuan snapshot writes #result-count and must not overwrite an
-        // active all-services/Ruguan/Qisu search during background refresh.
+        // The unified console is the only visible case list. Refresh only
+        // its current service and query so background sync never replaces a
+        // staff member's active search with the retired duplicate list.
         await loadDashboard();
         try {
           await loadUnifiedSnapshot(silent, { updateSwitchableList: false });
-          // Re-run exactly the service and query the staff member is viewing.
-          // This keeps the count and table from the same response.
-          await loadSwitchableCaseList(silent);
         }
         catch (unifiedError) {
           if (isAuthError(unifiedError)) return showLogin(unifiedError.message);
@@ -2088,23 +2099,15 @@ box.textContent = loginErrorMessage(error);
     $("#case-service").addEventListener("change", () => {
       $("#filter-form").dispatchEvent(new Event("submit", { cancelable: true }));
     });
-    $("#customer-form").addEventListener("submit", (event) => {
-      event.preventDefault();
-      findCustomers();
-    });
     const scheduleCaseListSearch = debounce(() => {
       $("#filter-form").dispatchEvent(new Event("submit", { cancelable: true }));
     });
     const scheduleUnifiedSearch = debounce(() => {
       $("#unified-filter-form").dispatchEvent(new Event("submit", { cancelable: true }));
     });
-    const scheduleCustomerSearch = debounce(() => {
-      $("#customer-form").dispatchEvent(new Event("submit", { cancelable: true }));
-    });
     [
       ["#case-query", scheduleCaseListSearch],
-      ["#unified-query", scheduleUnifiedSearch],
-      ["#customer-query", scheduleCustomerSearch]
+      ["#unified-query", scheduleUnifiedSearch]
     ].forEach(([selector, schedule]) => {
       const input = $(selector);
       input.addEventListener("input", (event) => {
