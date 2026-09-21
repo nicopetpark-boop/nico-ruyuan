@@ -725,7 +725,7 @@
             <div>
               <p class="eyebrow">store command center</p>
               <h2 id="unified-title">三站統一管理</h2>
-              <p class="surface-lede">入園、入館、寄宿集中檢視與處理；每一站原始資料仍各自保存在獨立試算表。</p>
+              <p class="surface-lede">入園、入館、寄宿集中檢視與處理；每一站原始資料仍各自保存在獨立試算表。輸入即可搜尋，英文不分大小寫。</p>
             </div>
             <span class="live-badge" id="unified-badge" data-state="loading">三站資料載入中</span>
           </div>
@@ -739,7 +739,7 @@
           <form class="unified-filters" id="unified-filter-form">
             <div class="field">
               <label for="unified-query">搜尋三站案件</label>
-              <input id="unified-query" type="search" placeholder="案件、飼主、電話、毛孩或備註" />
+              <input id="unified-query" type="search" placeholder="輸入即可搜尋；英文不分大小寫" />
             </div>
             <div class="field">
               <label for="unified-service">服務別</label>
@@ -776,7 +776,7 @@
       <div class="workspace">
         <section class="surface">
           <h2 id="case-list-title">全部案件清單</h2>
-          <p class="surface-lede" id="case-list-lede">可直接切換入園、入館、寄宿；點選任何案件即可查看完整表單資料、更新狀態與店家備註。</p>
+          <p class="surface-lede" id="case-list-lede">可直接切換入園、入館、寄宿；輸入即可搜尋，英文不分大小寫。點選任何案件即可查看完整表單資料、更新狀態與店家備註。</p>
           <form class="filters" id="filter-form">
             <div class="field">
               <label for="case-service">服務別</label>
@@ -789,7 +789,7 @@
             </div>
             <div class="field">
               <label for="case-query">搜尋案件</label>
-              <input id="case-query" type="search" placeholder="案件、飼主、電話或毛孩" />
+              <input id="case-query" type="search" placeholder="輸入即可搜尋；英文不分大小寫" />
             </div>
             <div class="field" id="ruyuan-status-field">
               <label for="status-filter">狀態</label>
@@ -900,6 +900,7 @@
     const FETCH_TIMEOUT = 30000;
     const AUTO_REFRESH_MS = 30000;
     const IDLE_LOGOUT_MS = 20 * 60 * 1000;
+    const LIVE_SEARCH_DELAY_MS = 250;
     let token = "";
     let currentCaseId = "";
     let toastTimer = null;
@@ -909,8 +910,23 @@
     let lastSyncAt = null;
     let refreshInFlight = false;
     let lastUserActivityAt = Date.now();
+    let caseListRequestSequence = 0;
+    let unifiedSearchRequestSequence = 0;
+    let customerSearchRequestSequence = 0;
 
     const $ = (selector) => document.querySelector(selector);
+
+    function normalizedSearchQuery(rawValue) {
+      return String(rawValue == null ? "" : rawValue).trim().toLocaleLowerCase("en-US");
+    }
+
+    function debounce(callback, delay = LIVE_SEARCH_DELAY_MS) {
+      let timer = null;
+      return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => callback(...args), delay);
+      };
+    }
 
     // A password must never be carried in a URL. Remove accidental query parameters before
     // any link, browser history sync, or later navigation can retain them.
@@ -1206,17 +1222,19 @@
     }
 
     async function loadSwitchableCaseList(silent) {
+      const requestSequence = ++caseListRequestSequence;
       const service = selectedCaseService();
       setCaseListMode(service);
       if (service === "ruyuan") {
-        return loadCases();
+        return loadCases(requestSequence);
       }
       if (!silent) $("#result-count").textContent = "載入中…";
       const data = await auth("adminUnifiedSnapshot", {
         service: service,
-        query: value("case-query"),
+        query: normalizedSearchQuery(value("case-query")),
         limit: 200
       });
+      if (requestSequence !== caseListRequestSequence || service !== selectedCaseService()) return data;
       unifiedData = data;
       applyUnifiedData(data);
       renderSwitchableUnifiedCases(data.cases || []);
@@ -1254,22 +1272,24 @@
       applyDashboardData(data);
     }
 
-    async function loadCases() {
+    async function loadCases(requestSequence = ++caseListRequestSequence) {
       $("#result-count").textContent = "載入中…";
       $("#result-note").textContent = "";
       const data = await auth("adminListCases", {
-        query: value("case-query"),
+        query: normalizedSearchQuery(value("case-query")),
         statusFilter: value("status-filter"),
         dateFrom: value("date-from"),
         dateTo: value("date-to")
       });
+      if (requestSequence !== caseListRequestSequence) return data;
       applyCaseList(data);
+      return data;
     }
 
     async function loadSnapshot(silent) {
       if (!silent) $("#result-count").textContent = "載入中…";
       const data = await auth("adminSnapshot", {
-        query: value("case-query"),
+        query: normalizedSearchQuery(value("case-query")),
         statusFilter: value("status-filter"),
         dateFrom: value("date-from"),
         dateTo: value("date-to")
@@ -1294,12 +1314,14 @@
     function unifiedMetric(id, value) { $(id).textContent = unifiedText(value == null ? "—" : value); }
 
     function loadUnifiedSnapshot(silent, options = {}) {
+      const requestSequence = ++unifiedSearchRequestSequence;
       if (!silent) $("#unified-result-count").textContent = "載入中…";
       return auth("adminUnifiedSnapshot", {
         service: value("unified-service"),
-        query: value("unified-query"),
+        query: normalizedSearchQuery(value("unified-query")),
         limit: 200
       }).then((data) => {
+        if (requestSequence !== unifiedSearchRequestSequence) return data;
         unifiedData = data;
         applyUnifiedData(data, options);
         return data;
@@ -1942,7 +1964,8 @@
 
     async function findCustomers() {
       const host = $("#customer-results");
-      const query = value("customer-query");
+      const requestSequence = ++customerSearchRequestSequence;
+      const query = normalizedSearchQuery(value("customer-query"));
       host.replaceChildren();
       if (!query) return;
       const note = document.createElement("p");
@@ -1955,6 +1978,7 @@
           query: query,
           limit: 50
         });
+        if (requestSequence !== customerSearchRequestSequence) return;
         host.replaceChildren();
         const cases = data.cases || [];
         if (!cases.length) {
@@ -1981,6 +2005,7 @@
           host.appendChild(item);
         });
       } catch (error) {
+        if (requestSequence !== customerSearchRequestSequence) return;
         if (isAuthError(error)) return showLogin(error.message);
         host.replaceChildren();
         note.textContent = error.message || "搜尋失敗";
@@ -2066,6 +2091,26 @@ box.textContent = loginErrorMessage(error);
     $("#customer-form").addEventListener("submit", (event) => {
       event.preventDefault();
       findCustomers();
+    });
+    const scheduleCaseListSearch = debounce(() => {
+      $("#filter-form").dispatchEvent(new Event("submit", { cancelable: true }));
+    });
+    const scheduleUnifiedSearch = debounce(() => {
+      $("#unified-filter-form").dispatchEvent(new Event("submit", { cancelable: true }));
+    });
+    const scheduleCustomerSearch = debounce(() => {
+      $("#customer-form").dispatchEvent(new Event("submit", { cancelable: true }));
+    });
+    [
+      ["#case-query", scheduleCaseListSearch],
+      ["#unified-query", scheduleUnifiedSearch],
+      ["#customer-query", scheduleCustomerSearch]
+    ].forEach(([selector, schedule]) => {
+      const input = $(selector);
+      input.addEventListener("input", (event) => {
+        if (!event.isComposing) schedule();
+      });
+      input.addEventListener("compositionend", schedule);
     });
     $("#drawer-close").addEventListener("click", closeDrawer);
     $("#case-drawer").addEventListener("click", (event) => {
