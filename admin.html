@@ -343,6 +343,10 @@
       color: var(--muted);
       font-size: .76rem;
     }
+    :where(a, button, input, select, textarea):focus-visible {
+      outline: 3px solid var(--blue);
+      outline-offset: 3px;
+    }
 
     .table-wrap {
       overflow-x: auto;
@@ -639,6 +643,8 @@
       .case-card p { margin: 6px 0 0; color: var(--muted); font-size: .76rem; }
       .case-card small { display: block; margin-top: 4px; color: var(--muted); }
       .side-column { grid-template-columns: 1fr; }
+      .management-workspace .side-column { grid-template-columns: 1fr; }
+      .management-workspace .side-card:last-child { grid-column: auto; }
       .detail-grid, .update-grid { grid-template-columns: 1fr; }
       .drawer-panel { border-radius: 24px 24px 0 0; height: min(92dvh, 900px); margin-top: auto; }
       .drawer { align-items: flex-end; }
@@ -722,7 +728,7 @@
         </div>
         <div class="top-actions">
           <span class="admin-name" id="admin-name"></span>
-          <a class="btn ghost" href="index.html" target="_blank" rel="noopener">查看前台</a>
+          <a class="btn ghost" href="index.html" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">查看前台</a>
           <button class="btn ghost" type="button" id="logout-button">登出</button>
         </div>
       </div>
@@ -775,7 +781,7 @@
             </div>
             <button class="btn secondary" type="submit">套用篩選</button>
           </form>
-          <p class="result-meta"><span id="unified-result-count">載入中…</span><span id="unified-result-note"></span></p>
+          <p class="result-meta" aria-live="polite"><span id="unified-result-count">載入中…</span><span id="unified-result-note"></span></p>
           <div class="table-wrap unified-table">
             <table>
               <thead><tr><th>服務</th><th>送出時間</th><th>案件</th><th>飼主／毛孩</th><th>狀態</th><th>特殊提醒／店員備註</th></tr></thead>
@@ -854,7 +860,7 @@
         <aside class="side-column">
           <section class="surface side-card">
             <h2>案件進度</h2>
-            <p class="surface-lede">點選狀態可立即篩選案件清單。</p>
+            <p class="surface-lede">入園案件目前的處理概況。</p>
             <div class="status-overview" id="status-overview"></div>
             <p class="focus-note" id="focus-note">正在整理今日重點…</p>
           </section>
@@ -1045,6 +1051,7 @@
 
     function showLogin(message) {
       setSession("");
+      document.body.style.overflow = "";
       $("#app-view").hidden = true;
       $("#login-view").hidden = false;
       const box = $("#login-message");
@@ -1373,6 +1380,7 @@
         const card = document.createElement("button");
         card.type = "button";
         card.className = "service-card" + (value("unified-service") === service.key ? " is-selected" : "");
+        card.setAttribute("aria-pressed", String(value("unified-service") === service.key));
         const title = document.createElement("strong");
         title.textContent = service.label;
         const stats = document.createElement("span");
@@ -1471,6 +1479,7 @@
       unifiedSelectedService = service;
       unifiedSelectedCaseId = caseId;
       $("#unified-drawer").hidden = false;
+      document.body.style.overflow = "hidden";
       $("#unified-drawer-title").textContent = "載入案件資料…";
       $("#unified-drawer-subtitle").textContent = "";
       $("#unified-drawer-content").replaceChildren(Object.assign(document.createElement("p"), { className: "loading", textContent: "載入中…" }));
@@ -1570,8 +1579,10 @@
 
       const links = document.createElement("div");
       links.className = "unified-detail-links";
-      if (caseData.pdfUrl) links.appendChild(linkButton(caseData.pdfUrl, "開啟 PDF"));
-      if (caseData.folderUrl) links.appendChild(linkButton(caseData.folderUrl, "開啟雲端資料夾"));
+      const pdfUrl = trustedAdminLink(caseData.pdfUrl);
+      const folderUrl = trustedAdminLink(caseData.folderUrl);
+      if (pdfUrl) links.appendChild(linkButton(pdfUrl, "開啟 PDF"));
+      if (folderUrl) links.appendChild(linkButton(folderUrl, "開啟雲端資料夾"));
       if (links.childNodes.length) host.appendChild(links);
 
       (caseData.detailSections || []).forEach((section) => {
@@ -1638,6 +1649,7 @@
 
     function closeUnifiedDrawer() {
       $("#unified-drawer").hidden = true;
+      document.body.style.overflow = "";
       unifiedSelectedService = "";
       unifiedSelectedCaseId = "";
     }
@@ -1798,7 +1810,7 @@
       document.body.style.overflow = "hidden";
       $("#drawer-title").textContent = caseId;
       $("#drawer-subtitle").textContent = "載入完整資料中…";
-      $("#drawer-content").innerHTML = '<p class="loading">載入中…</p>';
+      $("#drawer-content").replaceChildren(Object.assign(document.createElement("p"), { className: "loading", textContent: "載入中…" }));
       try {
         const data = await auth("adminGetCase", { caseId: caseId });
         renderDetail(data.caseData);
@@ -2129,7 +2141,9 @@ box.textContent = loginErrorMessage(error);
       if (event.target === event.currentTarget) closeDrawer();
     });
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && !$("#case-drawer").hidden) closeDrawer();
+      if (event.key !== "Escape") return;
+      if (!$("#unified-drawer").hidden) return closeUnifiedDrawer();
+      if (!$("#case-drawer").hidden) closeDrawer();
     });
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible" && token && lastSyncAt &&
