@@ -689,6 +689,26 @@
     .reveal {
       margin-top: 8px;
     }
+    .pet-upload {
+      width: 100%;
+      border: 1px dashed var(--oat);
+      border-radius: 14px;
+      padding: 12px;
+      background: var(--warm);
+      color: var(--cocoa-deep);
+      font: inherit;
+    }
+    .pet-upload::file-selector-button {
+      margin-right: 12px;
+      border: 0;
+      border-radius: 9px;
+      padding: 9px 12px;
+      background: var(--cocoa);
+      color: white;
+      font: inherit;
+      font-weight: 700;
+    }
+    .upload-hint { margin: 7px 0 0; color: var(--muted); font-size: .82rem; }
 
     .banner {
       border-radius: var(--radius-md);
@@ -1566,7 +1586,7 @@
           <span class="card-kicker">Step 01</span>
           <h2 tabindex="-1">飼主聯絡資料</h2>
           <p class="lede">請填寫主要聯絡人資料。同一飼主可一次登記多隻毛孩。電子信箱將於第三步收取驗證碼，作為身份認證。</p>
-          <p class="hint" style="margin:-8px 0 14px">資料會暫存在這支手機，送出前重整頁面也不會不見。</p>
+          <p class="hint" style="margin:-8px 0 14px">文字資料會暫存在這支手機；重新整理後，毛孩照片與疫苗證明需重新選擇。</p>
           <div id="banner-1"></div>
           <div class="stack">
             <div class="field">
@@ -1677,7 +1697,7 @@
             <ol>
               <li>蒐集者：Nico Nico Pet House 尼口尼口寵物精緻美容旅館。</li>
               <li>蒐集目的：毛孩入園評估與照護、客戶聯繫、緊急醫療聯繫、服務品質管理、客訴與帳務處理、法令遵循及爭議處理。</li>
-              <li>蒐集項目：飼主姓名、聯絡電話、電子信箱、LINE 名稱、緊急聯絡資料、毛孩基本資料與健康照護資訊、簽名圖檔、電子郵件驗證紀錄、裝置資訊，以及於您同意範圍內拍攝之毛孩影像。</li>
+              <li>蒐集項目：飼主姓名、聯絡電話、電子信箱、LINE 名稱、緊急聯絡資料、毛孩基本資料與健康照護資訊、飼主上傳之毛孩照片與狂犬病疫苗證明、簽名圖檔、電子郵件驗證紀錄、裝置資訊，以及於您同意範圍內拍攝之毛孩影像。</li>
               <li>利用期間：服務期間及結束後，依法令或為主張／防禦權利所必要之合理保存期間。</li>
               <li>利用地區：臺灣地區，以及為提供電子郵件發送、雲端備份所必要之處理地。</li>
               <li>利用對象：本館負責人及受託處理事務之人員、緊急醫療機構、依法有權機關。</li>
@@ -1937,6 +1957,18 @@
               <p class="error" data-err="p__IDX___vetPhone"></p>
             </div>
           </fieldset>
+          <div class="field">
+            <label for="p__IDX___petPhoto">毛孩照片 <span class="req">必傳</span></label>
+            <input class="pet-upload" id="p__IDX___petPhoto" data-k="petPhoto" type="file" accept="image/jpeg,image/png,image/webp" />
+            <p class="upload-hint">每隻毛孩各上傳一張清楚照片，支援 JPG、PNG、WebP。</p>
+            <p class="error" data-err="p__IDX___petPhoto"></p>
+          </div>
+          <div class="field">
+            <label for="p__IDX___rabiesProof">本年度狂犬病疫苗證明 <span class="req">必傳</span></label>
+            <input class="pet-upload" id="p__IDX___rabiesProof" data-k="rabiesProof" type="file" accept="image/jpeg,image/png,image/webp" />
+            <p class="upload-hint">請拍攝可看清施打日期與毛孩資料的完整證明；每隻毛孩各傳一張。</p>
+            <p class="error" data-err="p__IDX___rabiesProof"></p>
+          </div>
           <details class="fold" data-fold="health">
             <summary>健康與疾病紀錄 <span class="req">必填</span></summary>
             <div class="fold-body">
@@ -1978,6 +2010,15 @@
               <input id="p__IDX___diseaseOther" data-k="diseaseOther" type="text" maxlength="80" placeholder="請填寫疾病名稱" />
             </div>
             <p class="error" data-err="p__IDX___diseases"></p>
+          </fieldset>
+          <fieldset class="field">
+            <legend>是否定期驅蟲 <span class="req">必填</span></legend>
+            <div class="chips pack">
+              <label class="choice"><input type="radio" name="p__IDX___regularDeworming" data-k="regularDeworming" value="是" /> 是</label>
+              <label class="choice"><input type="radio" name="p__IDX___regularDeworming" data-k="regularDeworming" value="否" /> 否</label>
+              <label class="choice"><input type="radio" name="p__IDX___regularDeworming" data-k="regularDeworming" value="不確定" /> 不確定</label>
+            </div>
+            <p class="error" data-err="p__IDX___regularDeworming"></p>
           </fieldset>
           <fieldset class="field">
             <legend>最近一次體內外驅蟲時間</legend>
@@ -2041,6 +2082,7 @@
     const DRAFT_KEY = "nicopark-draft-v2";
     const DRAFT_KEY_OLD = "nicopark-draft-v1";
     const FETCH_MS = 28000;
+    const SUBMIT_FETCH_MS = 90000;
     const OTP_SEC = 60;
     const MAX_PETS = 5;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -2073,6 +2115,7 @@
     let petSeq = 0;
     let ownerNameComposing = false;
     let termsRead = false;
+    let pendingRequestId = "";
 
     function val(id) {
       const el = document.getElementById(id);
@@ -2291,6 +2334,10 @@
         if (sample) bindExclusive(sample.name, card);
       });
       $$("[data-reveal]", card).forEach((input) => input.addEventListener("change", syncReveals));
+      $$("input[data-k=\"hasVet\"]", card).forEach((input) => input.addEventListener("change", () => {
+        syncReveals();
+        saveDraft();
+      }));
       $$("input[data-k=\"species\"]", card).forEach((el) => {
         el.addEventListener("change", () => {
           fillBreedOptions(card, "");
@@ -2363,6 +2410,7 @@
       cardSet(card, "diseases", care.diseases || d.diseases);
       cardSet(card, "diseaseOther", care.diseaseOther || d.diseaseOther || "");
       cardSet(card, "deworm", care.deworm || d.deworm);
+      cardSet(card, "regularDeworming", care.regularDeworming || d.regularDeworming);
       cardSet(card, "dewormOther", care.dewormOther || d.dewormOther || "");
       cardSet(card, "preventative", care.preventative || d.preventative);
       cardSet(card, "preventativeOther", care.preventativeOther || d.preventativeOther || "");
@@ -2391,13 +2439,14 @@
         guardingOther: cardVal(card, "guardingOther"),
         leash: cardRadio(card, "leash"),
         hasVet: cardRadio(card, "hasVet"),
-        vetName: cardVal(card, "vetName"),
-        vetPhone: digitsOnly(cardVal(card, "vetPhone")).slice(0, 10),
-        vetInfo: [cardVal(card, "vetName"), digitsOnly(cardVal(card, "vetPhone"))].filter(Boolean).join("／"),
+        vetName: cardRadio(card, "hasVet") === "是" ? cardVal(card, "vetName") : "",
+        vetPhone: cardRadio(card, "hasVet") === "是" ? digitsOnly(cardVal(card, "vetPhone")).slice(0, 10) : "",
+        vetInfo: cardRadio(card, "hasVet") === "是" ? [cardVal(card, "vetName"), digitsOnly(cardVal(card, "vetPhone"))].filter(Boolean).join("／") : "",
         health14: cardChecks(card, "health14"),
         diseases: cardChecks(card, "diseases"),
         diseaseOther: cardVal(card, "diseaseOther"),
         deworm: cardRadio(card, "deworm"),
+        regularDeworming: cardRadio(card, "regularDeworming"),
         dewormOther: cardVal(card, "dewormOther"),
         preventative: cardRadio(card, "preventative"),
         preventativeOther: cardVal(card, "preventativeOther"),
@@ -2423,6 +2472,51 @@
         pet: first,
         care: first
       };
+    }
+
+    async function imageEvidence(file, label) {
+      if (!file || !/^image\/(jpeg|png|webp)$/i.test(file.type) || file.size > 12 * 1024 * 1024) {
+        throw new AppError(label + "請選擇 12 MB 以下的 JPG、PNG 或 WebP 圖片。");
+      }
+      const objectUrl = URL.createObjectURL(file);
+      try {
+        const image = new Image();
+        await new Promise((resolve, reject) => {
+          image.onload = resolve;
+          image.onerror = reject;
+          image.src = objectUrl;
+        });
+        const longest = Math.max(image.naturalWidth, image.naturalHeight);
+        if (!longest) throw new Error("empty image");
+        let side = Math.min(longest, 1800);
+        while (side >= 1) {
+          const scale = side / longest;
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+          canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL("image/jpeg", .82);
+          if (dataUrl.length <= 740000) return dataUrl;
+          if (side <= 900) break;
+          side = Math.max(1, Math.round(side * .8));
+        }
+        throw new AppError(label + "圖片過大，請裁切後重新上傳。");
+      } catch (error) {
+        if (error instanceof AppError) throw error;
+        throw new AppError(label + "無法讀取，請改用 JPG 或 PNG 重新上傳。");
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    }
+
+    async function attachPetEvidence(pets) {
+      const cards = petCards();
+      for (let index = 0; index < cards.length; index++) {
+        const photo = cards[index].querySelector('[data-k="petPhoto"]').files[0];
+        const rabies = cards[index].querySelector('[data-k="rabiesProof"]').files[0];
+        pets[index].petPhotoDataUrl = await imageEvidence(photo, "第 " + (index + 1) + " 隻毛孩的照片");
+        pets[index].rabiesProofDataUrl = await imageEvidence(rabies, "第 " + (index + 1) + " 隻毛孩的狂犬病疫苗證明");
+      }
     }
 
     function saveDraft() {
@@ -2527,6 +2621,14 @@
         push(item("vetName", cardVal(card, "vetName").trim().length >= 2, "請填寫醫院名稱"));
         push(item("vetPhone", /^04\d{8}$/.test(digitsOnly(cardVal(card, "vetPhone"))), "請填寫 04 開頭的 10 碼醫院電話"));
       }
+      ["petPhoto", "rabiesProof"].forEach((key) => {
+        const input = byK(key);
+        const file = input && input.files && input.files[0];
+        const label = key === "petPhoto" ? "毛孩照片" : "本年度狂犬病疫苗證明";
+        push(item(key, !!file, "請上傳" + label));
+        if (file && !/^image\/(jpeg|png|webp)$/i.test(file.type)) push(item(key, false, label + "請使用 JPG、PNG 或 WebP"));
+        if (file && file.size > 12 * 1024 * 1024) push(item(key, false, label + "檔案不可超過 12 MB"));
+      });
       push(item("health14", cardChecks(card, "health14").length > 0, "請至少勾選一項近 14 天健康狀況"));
       const dis = cardChecks(card, "diseases");
       if (!dis.length) push(item("diseases", false, "請至少勾選一項疾病紀錄"));
@@ -2536,6 +2638,7 @@
       if (cardRadio(card, "deworm") === "其他" && !cardVal(card, "dewormOther")) {
         push(item("dewormOther", false, "請填寫其他驅蟲時間"));
       }
+      push(item("regularDeworming", !!cardRadio(card, "regularDeworming"), "請選擇是否定期驅蟲"));
       if (cardRadio(card, "preventative") === "其他" && !cardVal(card, "preventativeOther")) {
         push(item("preventativeOther", false, "請填寫其他用藥說明"));
       }
@@ -3042,7 +3145,7 @@
         throw new AppError("尚未設定送出網址。請將 Google Apps Script Web App 的 /exec 網址貼到頁面中的 GAS_WEB_APP_URL 後再試。");
       }
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), FETCH_MS);
+      const timer = setTimeout(() => controller.abort(), payload.action === "submit" ? SUBMIT_FETCH_MS : FETCH_MS);
       try {
         const res = await fetch(GAS_WEB_APP_URL.trim(), {
           method: "POST",
@@ -3307,17 +3410,23 @@
       submitting = true;
       const btn = document.getElementById("submit-form");
       btn.disabled = true;
-      btn.textContent = "送出中…";
+      btn.textContent = "處理照片中…";
       try {
+        const form = collectForm();
+        await attachPetEvidence(form.pets);
+        if (!pendingRequestId) pendingRequestId = (crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random());
+        btn.textContent = "送出中…";
         const payload = {
           action: "submit",
+          formVersion: "pet-evidence-20260923",
+          requestId: pendingRequestId,
           otp: val("otp"),
           signatureDataUrl: exportSignature(),
           agreedToTerms: true,
           agreedToPhoto: true,
           agreedAt: new Date().toISOString(),
           device: deviceInfo(),
-          form: collectForm(),
+          form: form,
 
         };
         const data = await callGas(payload);
@@ -3326,9 +3435,13 @@
         const pdfUrl = pick(data, ["pdfUrl", "pdf_url", "pdf"]);
         const message = pick(data, ["message", "msg"]);
         clearLocalData();
+        pendingRequestId = "";
         showSuccess({ caseId, pdfUrl, message });
       } catch (err) {
-        showBanner(3, err.message || "送出失敗，請稍後再試。");
+        if (/照片|疫苗證明/.test(String(err.message || ""))) {
+          showPanel(1);
+          showBanner(1, err.message);
+        } else showBanner(3, err.message || "送出失敗，請稍後再試。");
       } finally {
         submitting = false;
         btn.disabled = false;
