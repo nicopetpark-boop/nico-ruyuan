@@ -656,6 +656,9 @@
     .unified-head { display:flex; gap:16px; align-items:flex-start; justify-content:space-between; margin-bottom:18px; }
     .unified-head h2 { margin:0; }
     .unified-head .surface-lede { margin:5px 0 0; }
+    .unified-metric-context { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:4px 16px; margin:0 0 10px; }
+    .unified-metric-context strong { color:var(--ink); font-size:16px; }
+    .unified-metric-context span { color:var(--muted); font-size:13px; }
     .unified-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:0 0 16px; }
     .unified-metric { border:1px solid var(--line); border-radius:16px; background:var(--cream); padding:15px; }
     .unified-metric span { display:block; color:var(--muted); font-size:13px; font-weight:800; }
@@ -758,7 +761,11 @@
             </div>
             <span class="live-badge" id="unified-badge" data-state="loading">三站資料載入中</span>
           </div>
-          <div class="unified-metrics" aria-label="三站案件統計">
+          <div class="unified-metric-context">
+            <strong id="unified-metric-scope" aria-live="polite">統計範圍：全部服務</strong>
+            <span>以下數字隨服務篩選切換；下方卡片分別顯示各站數字。</span>
+          </div>
+          <div class="unified-metrics" id="unified-metrics" aria-label="全部服務案件統計">
             <article class="unified-metric"><span>今日新增</span><strong id="unified-today">—</strong></article>
             <article class="unified-metric"><span>待處理</span><strong id="unified-pending">—</strong></article>
             <article class="unified-metric"><span>特殊提醒</span><strong id="unified-attention">—</strong></article>
@@ -1334,9 +1341,23 @@
 
     function unifiedMetric(id, value) { $(id).textContent = unifiedText(value == null ? "—" : value); }
 
+    function unifiedServiceLabel(service) {
+      return { all: "全部服務", ruyuan: "入園", ruguan: "入館", qisu: "寄宿" }[service] || "全部服務";
+    }
+
+    function setUnifiedMetricScope(service, loading) {
+      const label = "統計範圍：" + unifiedServiceLabel(service) + (loading ? "（載入中）" : "");
+      $("#unified-metric-scope").textContent = label;
+      $("#unified-metrics").setAttribute("aria-label", label + "案件統計");
+    }
+
     function loadUnifiedSnapshot(silent, options = {}) {
       const requestSequence = ++unifiedSearchRequestSequence;
-      if (!silent) $("#unified-result-count").textContent = "載入中…";
+      if (!silent) {
+        $("#unified-result-count").textContent = "載入中…";
+        setUnifiedMetricScope(value("unified-service"), true);
+        ["#unified-today", "#unified-pending", "#unified-attention", "#unified-total"].forEach((id) => unifiedMetric(id, null));
+      }
       return auth("adminUnifiedSnapshot", {
         service: value("unified-service"),
         query: normalizedSearchQuery(value("unified-query")),
@@ -1352,13 +1373,9 @@
     function applyUnifiedData(data, options = {}) {
       const updateSwitchableList = options.updateSwitchableList !== false;
       const selectedService = value("unified-service") || "all";
-      const selectedServiceLabel = {
-        all: "三站",
-        ruyuan: "入園",
-        ruguan: "入館",
-        qisu: "寄宿"
-      }[selectedService] || "案件";
+      const selectedServiceLabel = selectedService === "all" ? "三站" : unifiedServiceLabel(selectedService);
       const summary = data.summary || {};
+      setUnifiedMetricScope(selectedService, false);
       unifiedMetric("#unified-today", summary.today);
       unifiedMetric("#unified-pending", summary.pending);
       unifiedMetric("#unified-attention", summary.attention);
