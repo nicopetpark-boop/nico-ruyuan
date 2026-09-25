@@ -1516,7 +1516,18 @@
       const title = document.createElement("span");
       title.textContent = readableDetailLabel(label);
       const body = document.createElement("strong");
-      body.textContent = readableDetailValue(label, detail);
+      const evidenceUrl = /^(毛孩照片|本年度狂犬病疫苗證明)$/u.test(unifiedText(label).trim())
+        ? trustedAdminLink(detail) : "";
+      if (evidenceUrl && /^https:\/\/drive\.google\.com\/file\/d\/[A-Za-z0-9_-]+/u.test(evidenceUrl)) {
+        const link = document.createElement("a");
+        link.href = evidenceUrl;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = "開啟上傳圖片 ↗";
+        body.appendChild(link);
+      } else {
+        body.textContent = readableDetailValue(label, detail);
+      }
       item.append(title, body);
       return item;
     }
