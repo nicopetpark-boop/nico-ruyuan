@@ -685,6 +685,7 @@
     .unified-detail-section { margin:18px 0 0; border-top:1px solid var(--line); padding-top:18px; }
     .unified-detail-section h3 { margin:0 0 11px; color:var(--cocoa); font-size:16px; }
     .unified-detail-section .unified-detail-grid { margin:0; }
+    .unified-care-note { margin:14px 0 0; padding:12px; border-radius:12px; background:#f8f3ed; color:var(--muted); font-size:14px; line-height:1.5; }
     .unified-detail-links { display:flex; flex-wrap:wrap; gap:9px; margin:16px 0 0; }
     .unified-actions { display:grid; gap:14px; border-top:1px solid var(--line); margin-top:18px; padding-top:18px; }
     .unified-actions textarea { min-height:105px; resize:vertical; }
@@ -1529,6 +1530,10 @@
     }
 
     function readableDetailValue(label, detail) {
+      if (label === "緊急醫療授權") {
+        if (detail === "立即送醫") return "立即送往附近合法醫療院所，費用由本人負擔";
+        if (detail === "須先同意") return "須先取得本人同意後再送醫，費用由本人負擔";
+      }
       if (!isClientDeviceField(label)) return unifiedText(detail || "—");
 
       let device = detail;
@@ -1577,6 +1582,72 @@
       return section;
     }
 
+    const QISU_RAW_PETS_LABEL = "毛孩逐項原始資料";
+    const QISU_CARE_SUMMARIES = new Set(["毛孩行為注意", "毛孩住宿照護"]);
+
+    function qisuRawPetsField(caseData) {
+      for (const section of caseData.detailSections || []) {
+        const raw = (section.fields || []).find((field) => field && field.label === QISU_RAW_PETS_LABEL);
+        if (raw) return raw;
+      }
+      return null;
+    }
+
+    function qisuSavedPets(caseData) {
+      const raw = qisuRawPetsField(caseData);
+      if (!raw) return null;
+      try {
+        const pets = JSON.parse(unifiedText(raw.value));
+        return Array.isArray(pets) && pets.length > 0 && pets.length <= 5 &&
+          pets.every((pet) => pet && typeof pet === "object" && !Array.isArray(pet)) ? pets : null;
+      } catch (error) { return null; }
+    }
+
+    function qisuChoiceText(key, value) {
+      const choices = {
+        guardFood: { "無": "無此狀況", "有": "有護食或護玩具" },
+        withPets: { "友善": "大多友善", "會緊張低吼": "會緊張或低吼", "有攻擊經驗": "有攻擊或咬傷經驗" },
+        anxiety: { "不明顯": "不明顯", "會叫或破壞": "主人離開會叫或破壞", "不確定": "不確定" }
+      };
+      const answer = unifiedText(value).trim();
+      return choices[key] && choices[key][answer] || answer || "未填";
+    }
+
+    function qisuPetFields(pet, definitions) {
+      return definitions.map(([key, label]) => ({ label, value: qisuChoiceText(key, pet[key]) }));
+    }
+
+    function renderQisuCareDetails(host, caseData) {
+      const pets = qisuSavedPets(caseData);
+      if (!pets) {
+        const note = document.createElement("p");
+        note.className = "unified-care-note";
+        const hasSummary = (caseData.detailSections || []).some((section) =>
+          (section.fields || []).some((field) => field && QISU_CARE_SUMMARIES.has(field.label)));
+        note.textContent = qisuRawPetsField(caseData)
+          ? "逐項照護資料暫時無法讀取，請檢查寄宿試算表中的原始資料；不要依空白欄位推測客人答案。"
+          : hasSummary
+            ? "此案保有照護摘要，但當時尚未保存每一項原始答案；上方摘要可供參考。"
+            : "此舊案送出時尚未保存逐項照護答案，無法從後台或原 PDF 還原。";
+        host.appendChild(note);
+        return;
+      }
+      pets.forEach((pet, index) => {
+        const name = unifiedText(pet.name).trim() || "未命名";
+        const title = "毛孩 " + (index + 1) + "｜" + name;
+        host.appendChild(unifiedDetailSection(title + "・基本與行為", qisuPetFields(pet, [
+          ["name", "毛孩名字"], ["species", "毛孩是"], ["breed", "品種"],
+          ["guardFood", "護食或護玩具"], ["withPets", "對人或其他毛孩"],
+          ["anxiety", "分離焦慮"], ["behaviorNote", "其他行為備註"]
+        ])));
+        host.appendChild(unifiedDetailSection(title + "・住宿照護", qisuPetFields(pet, [
+          ["mealMorning", "早餐"], ["mealNoon", "午餐"], ["mealNight", "晚餐"],
+          ["allergen", "過敏原"], ["chronic", "痼疾"], ["medicine", "餵藥"],
+          ["grassWalk", "散步可否去草叢"], ["regularMed", "是否定期投藥"]
+        ])));
+      });
+    }
+
     function renderUnifiedDrawer(caseData) {
       $("#unified-drawer-title").textContent = unifiedText(caseData.serviceLabel) + "｜" + unifiedText(caseData.caseId);
       $("#unified-drawer-subtitle").textContent = "原始資料仍保存在「" + unifiedText(caseData.serviceLabel) + "」的獨立試算表。";
@@ -1602,10 +1673,15 @@
       if (folderUrl) links.appendChild(linkButton(folderUrl, "開啟雲端資料夾"));
       if (links.childNodes.length) host.appendChild(links);
 
+      const qisuCase = unifiedSelectedService === "qisu";
+      const qisuHasPets = qisuCase && !!qisuSavedPets(caseData);
       (caseData.detailSections || []).forEach((section) => {
         if (!section || !(section.fields || []).length) return;
-        host.appendChild(unifiedDetailSection(section.title || "完整表單資料", section.fields));
+        const fields = qisuCase ? section.fields.filter((field) => field &&
+          field.label !== QISU_RAW_PETS_LABEL && !(qisuHasPets && QISU_CARE_SUMMARIES.has(field.label))) : section.fields;
+        if (fields.length) host.appendChild(unifiedDetailSection(section.title || "完整表單資料", fields));
       });
+      if (qisuCase) renderQisuCareDetails(host, caseData);
       const actions = document.createElement("form");
       actions.className = "unified-actions";
       const statusField = document.createElement("div");
