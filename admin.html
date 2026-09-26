@@ -1221,7 +1221,7 @@
         caseStrong.textContent = unifiedText(caseData.caseId || "—");
         const submittedCell = unifiedCell(caseData.submittedAt);
         const ownerCell = unifiedCell(caseData.ownerName);
-        const petCell = unifiedCell((caseData.petNames || []).join("、"));
+        const petCell = unifiedCell((caseData.petNames || []).join("、") + (caseData.petCount ? "（共 " + caseData.petCount + " 隻）" : ""));
         if (caseData.specialAlert) {
           const alert = document.createElement("span");
           alert.className = "care-alert";
@@ -1482,7 +1482,7 @@
 
         const card = unifiedCaseButton(caseData, true);
         const title = document.createElement("strong");
-        title.textContent = unifiedText(caseData.serviceLabel) + " · " + unifiedText(caseData.ownerName) + "／" + (caseData.petNames || []).join("、");
+        title.textContent = unifiedText(caseData.serviceLabel) + " · " + unifiedText(caseData.ownerName) + "／" + (caseData.petNames || []).join("、") + (caseData.petCount ? "（共 " + caseData.petCount + " 隻）" : "");
         const line1 = document.createElement("span");
         line1.textContent = unifiedText(caseData.caseId) + " · " + statusLabel(caseData.status);
         const line2 = document.createElement("span");
