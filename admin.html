@@ -1243,7 +1243,7 @@
         const top = document.createElement("div");
         top.className = "case-card-top";
         const title = document.createElement("strong");
-        title.textContent = unifiedText(caseData.serviceLabel) + " · " + unifiedText(caseData.ownerName) + "／" + (caseData.petNames || []).join("、");
+        title.textContent = unifiedText(caseData.serviceLabel) + " · " + unifiedText(caseData.ownerName) + "／" + (caseData.petNames || []).join("、") + (caseData.petCount ? "（共 " + caseData.petCount + " 隻）" : "");
         top.append(title, statusBadge(caseData.status));
         const meta = document.createElement("p");
         meta.textContent = unifiedText(caseData.caseId) + "　" + unifiedText(caseData.submittedAt);
@@ -1474,7 +1474,7 @@
           serviceTd,
           unifiedCell(caseData.submittedAt),
           unifiedCell(caseData.caseId),
-          unifiedCell(unifiedText(caseData.ownerName) + "／" + (caseData.petNames || []).join("、")),
+          unifiedCell(unifiedText(caseData.ownerName) + "／" + (caseData.petNames || []).join("、") + (caseData.petCount ? "（共 " + caseData.petCount + " 隻）" : "")),
           unifiedCell(statusLabel(caseData.status)),
           unifiedNoticeCell(caseData)
         );
@@ -1645,7 +1645,7 @@
       }
       pets.forEach((pet, index) => {
         const name = unifiedText(pet.name).trim() || "未命名";
-        const title = "毛孩 " + (index + 1) + "｜" + name;
+        const title = "毛孩 " + (index + 1) + " / " + pets.length + "｜" + name;
         host.appendChild(unifiedDetailSection(title + "・基本與行為", qisuPetFields(pet, [
           ["name", "毛孩名字"], ["species", "毛孩是"], ["breed", "品種"],
           ["guardFood", "護食或護玩具"], ["withPets", "對人或其他毛孩"],
@@ -1675,6 +1675,15 @@
         unifiedDetail("特殊提醒", caseData.specialAlert || "無")
       );
       host.appendChild(grid);
+
+      const petSummary = document.createElement("p");
+      petSummary.className = "unified-care-note";
+      const loadedPets = Number(caseData.petDetailCount) || 0;
+      petSummary.textContent = caseData.petDetailWarning || (caseData.petCount
+        ? "本案共 " + caseData.petCount + " 隻毛孩，已載入 " + loadedPets + " 隻詳細資料。請往下逐隻查看。"
+        : "舊案未記錄完整毛孩隻數，以下僅顯示當時已保存的資料。");
+      if (caseData.petDetailWarning) { petSummary.style.color = "#9D352B"; petSummary.style.fontWeight = "700"; }
+      host.appendChild(petSummary);
 
       const links = document.createElement("div");
       links.className = "unified-detail-links";
