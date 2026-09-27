@@ -1331,6 +1331,7 @@
     let unifiedData = null;
     let unifiedSelectedService = "";
     let unifiedSelectedCaseId = "";
+    let unifiedDetailRequest = 0;
 
     function unifiedText(value) { return String(value == null ? "" : value); }
 
@@ -1494,6 +1495,7 @@
     }
 
     async function openUnifiedCase(service, caseId) {
+      const request = ++unifiedDetailRequest;
       unifiedSelectedService = service;
       unifiedSelectedCaseId = caseId;
       $("#unified-drawer").hidden = false;
@@ -1503,8 +1505,12 @@
       $("#unified-drawer-content").replaceChildren(Object.assign(document.createElement("p"), { className: "loading", textContent: "載入中…" }));
       try {
         const data = await auth("adminUnifiedGetCase", { service: service, caseId: caseId });
-        renderUnifiedDrawer(data.caseData || {});
+        if (request !== unifiedDetailRequest) return;
+        if (!data.caseData || data.caseData.caseId !== caseId ||
+            (data.caseData.service && data.caseData.service !== service)) throw new Error("案件資料不一致，請重新開啟案件。");
+        renderUnifiedDrawer(data.caseData, { service, caseId, request });
       } catch (error) {
+        if (request !== unifiedDetailRequest) return;
         if (isAuthError(error)) return showLogin(error.message);
         $("#unified-drawer-content").replaceChildren(Object.assign(document.createElement("p"), { className: "message", textContent: error.message || "讀取案件失敗。" }));
       }
@@ -1610,7 +1616,8 @@
       try {
         const pets = JSON.parse(unifiedText(raw.value));
         return Array.isArray(pets) && pets.length > 0 && pets.length <= 5 &&
-          pets.every((pet) => pet && typeof pet === "object" && !Array.isArray(pet)) ? pets : null;
+          pets.every((pet) => pet && typeof pet === "object" && !Array.isArray(pet) &&
+            typeof pet.name === "string" && pet.name.trim()) ? pets : null;
       } catch (error) { return null; }
     }
 
@@ -1659,7 +1666,10 @@
       });
     }
 
-    function renderUnifiedDrawer(caseData) {
+    function renderUnifiedDrawer(caseData, identity) {
+      const target = identity || { service: caseData.service || unifiedSelectedService, caseId: caseData.caseId, request: unifiedDetailRequest };
+      const isCurrent = () => target.request === unifiedDetailRequest &&
+        target.service === unifiedSelectedService && target.caseId === unifiedSelectedCaseId;
       $("#unified-drawer-title").textContent = unifiedText(caseData.serviceLabel) + "｜" + unifiedText(caseData.caseId);
       $("#unified-drawer-subtitle").textContent = "原始資料仍保存在「" + unifiedText(caseData.serviceLabel) + "」的獨立試算表。";
       const host = $("#unified-drawer-content");
@@ -1693,7 +1703,7 @@
       if (folderUrl) links.appendChild(linkButton(folderUrl, "開啟雲端資料夾"));
       if (links.childNodes.length) host.appendChild(links);
 
-      const qisuCase = unifiedSelectedService === "qisu";
+      const qisuCase = target.service === "qisu";
       const qisuHasPets = qisuCase && !!qisuSavedPets(caseData);
       (caseData.detailSections || []).forEach((section) => {
         if (!section || !(section.fields || []).length) return;
@@ -1737,18 +1747,19 @@
       actions.append(statusField, noteField, save);
       actions.addEventListener("submit", async (event) => {
         event.preventDefault();
+        if (save.disabled || !isCurrent()) return;
         save.disabled = true;
         save.textContent = "儲存中…";
         try {
           const result = await auth("adminUnifiedUpdateCase", {
-            service: unifiedSelectedService,
-            caseId: unifiedSelectedCaseId,
+            service: target.service,
+            caseId: target.caseId,
             caseStatus: status.value,
             note: note.value
           });
           toast(result.message || "已儲存");
           await loadUnifiedSnapshot(true);
-          await openUnifiedCase(unifiedSelectedService, unifiedSelectedCaseId);
+          if (isCurrent()) await openUnifiedCase(target.service, target.caseId);
         } catch (error) {
           if (isAuthError(error)) return showLogin(error.message);
           toast(error.message || "儲存失敗");
@@ -1761,6 +1772,7 @@
     }
 
     function closeUnifiedDrawer() {
+      unifiedDetailRequest++;
       $("#unified-drawer").hidden = true;
       document.body.style.overflow = "";
       unifiedSelectedService = "";
