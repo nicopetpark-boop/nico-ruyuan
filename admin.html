@@ -869,7 +869,7 @@
         <aside class="side-column">
           <section class="surface side-card">
             <h2>案件進度</h2>
-            <p class="surface-lede">入園案件目前的處理概況。</p>
+            <p class="surface-lede" id="progress-scope">全部服務</p>
             <div class="status-overview" id="status-overview"></div>
             <p class="focus-note" id="focus-note">正在整理今日重點…</p>
           </section>
@@ -945,6 +945,7 @@
     const IDLE_LOGOUT_MS = 20 * 60 * 1000;
     const LIVE_SEARCH_DELAY_MS = 250;
     let token = "";
+    let sessionEpoch = 0, caseDetailRequest = 0;
     let currentCaseId = "";
     let toastTimer = null;
     let autoRefreshTimer = null;
@@ -1050,10 +1051,20 @@
     }
 
     function auth(action, extra) {
-      return api(Object.assign({ action: action, token: token }, extra || {}));
+      const epoch = sessionEpoch, session = token;
+      const cancelled = () => Object.assign(new Error("操作已取消，請重新開啟。"), { cancelled: true });
+      if (!session) return Promise.reject(cancelled());
+      return api(Object.assign({ action, token: session }, extra || {})).then(data => {
+        if (epoch !== sessionEpoch || token !== session) throw cancelled();
+        return data;
+      }, error => {
+        if (epoch !== sessionEpoch || token !== session) throw cancelled();
+        throw error;
+      });
     }
 
     function setSession(sessionToken) {
+      ++sessionEpoch;
       token = sessionToken || "";
       lastUserActivityAt = Date.now();
       if (token) localStorage.setItem(SESSION_KEY, token);
@@ -1064,15 +1075,21 @@
     }
 
     function showLogin(message) {
-      ++cpRequest;cpCurrent=null;$("#cp-drawer").hidden=true;$("#cp-content").replaceChildren();$("#cp-roster").replaceChildren();$("#cp-unlinked").replaceChildren();
+      ++cpRequest; ++cpWriteSequence; ++unifiedDetailRequest; ++caseDetailRequest;
+      ++caseListRequestSequence; ++unifiedSearchRequestSequence; ++customerSearchRequestSequence;
+      cpCurrent = null; cpBusy = false; cpOperations.clear(); unifiedData = null;
+      currentCaseId = ""; unifiedSelectedService = ""; unifiedSelectedCaseId = "";
       setSession("");
+      ["#cp-drawer", "#unified-drawer", "#case-drawer"].forEach(id => $(id).hidden = true);
+      ["#cp-content", "#cp-roster", "#cp-unlinked", "#unified-drawer-content", "#drawer-content",
+       "#unified-tbody", "#unified-mobile-cases", "#case-tbody", "#mobile-cases", "#customer-results", "#status-overview"].forEach(id => $(id)?.replaceChildren());
+      $("#cp-content").removeAttribute("aria-busy");
+      ["#unified-drawer-title", "#unified-drawer-subtitle", "#drawer-title", "#drawer-subtitle", "#focus-note", "#cp-message", "#cp-roster-count", "#cp-unlinked-count"].forEach(id => { if ($(id)) $(id).textContent = ""; });
+      ["#cp-query", "#unified-query", "#query", "#customer-query", "#password"].forEach(id => { if ($(id)) $(id).value = ""; });
+      clearTimeout(toastTimer); $("#toast").hidden = true;
       document.body.style.overflow = "";
-      $("#app-view").hidden = true;
-      $("#login-view").hidden = false;
-      const box = $("#login-message");
-      box.hidden = !message;
-      box.textContent = message || "";
-
+      $("#app-view").hidden = true; $("#login-view").hidden = false;
+      const box = $("#login-message"); box.hidden = !message; box.textContent = message || "";
       setTimeout(() => $("#username").focus(), 20);
     }
 
@@ -1179,12 +1196,12 @@
           status.appendChild(option);
         });
       }
-      renderStatusOverview(stats.byStatus || {});
+      /* Progress is rendered exclusively from the matching unified snapshot. */
       const focus = [];
       if (Number(stats.pending || 0)) focus.push(Number(stats.pending) + " 筆待處理");
       if (Number(stats.healthAlerts || 0)) focus.push(Number(stats.healthAlerts) + " 筆健康提醒");
       if (!focus.length) focus.push("目前沒有待處理或健康提醒案件");
-      $("#focus-note").textContent = "今日新增 " + Number(stats.today || 0) + " 筆；" + focus.join("、") + "。";
+
     }
 
     function applyCaseList(data) {
@@ -1288,18 +1305,17 @@
       return data;
     }
 
-    function renderStatusOverview(counts) {
-      const host = $("#status-overview");
-      host.replaceChildren();
-      ["待審核", "待聯繫", "已確認", "已完成", "已取消"].forEach((name) => {
-        const item = document.createElement("div");
-        item.className = "status-jump";
-        const label = document.createElement("span");
-        label.textContent = statusLabel(name);
-        const count = document.createElement("strong");
-        count.textContent = Number(counts[name] || 0);
-        item.append(label, count);
-        host.appendChild(item);
+    function renderStatusOverview(counts, service) {
+      const host = $("#status-overview"); host.replaceChildren();
+      $("#progress-scope").textContent = unifiedServiceLabel(service || value("unified-service"));
+      const normalized = {};
+      Object.entries(counts).forEach(([name, count]) => { const key = name === "已做完" ? "已完成" : name; normalized[key] = (normalized[key] || 0) + Number(count || 0); });
+      const statuses = Array.from(new Set(["待確認", "待審核", "待聯繫", "已確認", "已完成", "已取消", ...Object.keys(normalized)]));
+      statuses.forEach(name => {
+        const item = document.createElement("div"); item.className = "status-jump";
+        const label = document.createElement("span"); label.textContent = statusLabel(name);
+        const count = document.createElement("strong"); count.textContent = Number(normalized[name] || 0);
+        item.append(label, count); host.appendChild(item);
       });
     }
 
@@ -1365,6 +1381,8 @@
       if (!silent) {
         $("#unified-result-count").textContent = "載入中…";
         setUnifiedMetricScope(value("unified-service"), true);
+        $("#progress-scope").textContent = unifiedServiceLabel(value("unified-service")) + "（載入中）";
+        $("#status-overview").replaceChildren(); $("#focus-note").textContent = "";
         ["#unified-today", "#unified-pending", "#unified-attention", "#unified-total"].forEach((id) => unifiedMetric(id, null));
       }
       return auth("adminUnifiedSnapshot", {
@@ -1384,6 +1402,8 @@
       const selectedService = value("unified-service") || "all";
       const selectedServiceLabel = selectedService === "all" ? "三站" : unifiedServiceLabel(selectedService);
       const summary = data.summary || {};
+      renderStatusOverview(summary.byStatus || {}, selectedService);
+      $("#focus-note").textContent = "今日新增 " + Number(summary.today || 0) + " 筆 · 待處理 " + Number(summary.pending || 0) + " 筆 · 特殊提醒 " + Number(summary.attention || 0) + " 筆";
       setUnifiedMetricScope(selectedService, false);
       unifiedMetric("#unified-today", summary.today);
       unifiedMetric("#unified-pending", summary.pending);
@@ -1676,7 +1696,7 @@
 
     function renderUnifiedDrawer(caseData, identity) {
       const target = identity || { service: caseData.service || unifiedSelectedService, caseId: caseData.caseId, request: unifiedDetailRequest };
-      const isCurrent = () => target.request === unifiedDetailRequest &&
+      const isCurrent = () => !!token && !$("#unified-drawer").hidden && target.request === unifiedDetailRequest &&
         target.service === unifiedSelectedService && target.caseId === unifiedSelectedCaseId;
       $("#unified-drawer-title").textContent = unifiedText(caseData.serviceLabel) + "｜" + unifiedText(caseData.caseId);
       $("#unified-drawer-subtitle").textContent = "原始資料仍保存在「" + unifiedText(caseData.serviceLabel) + "」的獨立試算表。";
@@ -1756,7 +1776,7 @@
       actions.addEventListener("submit", async (event) => {
         event.preventDefault();
         if (save.disabled || !isCurrent()) return;
-        save.disabled = true;
+        save.disabled = true; status.disabled = true; note.disabled = true;
         save.textContent = "儲存中…";
         try {
           const result = await auth("adminUnifiedUpdateCase", {
@@ -1765,6 +1785,7 @@
             caseStatus: status.value,
             note: note.value
           });
+          if (!isCurrent() || !token) return;
           toast(result.message || "已儲存");
           await loadUnifiedSnapshot(true);
           if (isCurrent()) await openUnifiedCase(target.service, target.caseId);
@@ -1772,7 +1793,7 @@
           if (isAuthError(error)) return showLogin(error.message);
           toast(error.message || "儲存失敗");
         } finally {
-          save.disabled = false;
+          save.disabled = false; status.disabled = false; note.disabled = false;
           save.textContent = "儲存店家處理內容";
         }
       });
@@ -1782,6 +1803,7 @@
     function closeUnifiedDrawer() {
       unifiedDetailRequest++;
       $("#unified-drawer").hidden = true;
+      $("#unified-drawer-content").replaceChildren();
       document.body.style.overflow = "";
       unifiedSelectedService = "";
       unifiedSelectedCaseId = "";
@@ -1790,6 +1812,7 @@
     async function refreshAll(silent) {
       if (refreshInFlight) return;
       refreshInFlight = true;
+      const epoch = sessionEpoch;
       const button = $("#refresh-button");
       button.disabled = true;
       setLiveState("loading", "Google 試算表同步中");
@@ -1798,14 +1821,17 @@
         // its current service and query so background sync never replaces a
         // staff member's active search with the retired duplicate list.
         await loadDashboard();
+        if (epoch !== sessionEpoch || !token) return;
         try {
           await loadUnifiedSnapshot(silent, { updateSwitchableList: false });
         }
         catch (unifiedError) {
+          if (epoch !== sessionEpoch || !token) return;
           if (isAuthError(unifiedError)) return showLogin(unifiedError.message);
           setUnifiedState("error", "三站總覽暫時無法載入");
           $("#unified-result-note").textContent = unifiedError.message || "請稍後重新整理。";
         }
+        if (epoch !== sessionEpoch || !token) return;
         lastSyncAt = new Date();
         nextRefreshAt = Date.now() + AUTO_REFRESH_MS;
         setLiveState("ready", "Google 試算表已連動");
@@ -1813,6 +1839,7 @@
         if (!silent) toast("資料已更新");
       } catch (error) {
         if (isAuthError(error)) return showLogin(error.message);
+        if (epoch !== sessionEpoch || !token) return;
         setLiveState("error", "同步暫時中斷");
         $("#last-sync").textContent = "保留上次資料 · 請按重新整理";
         toast(error.message || "載入失敗");
@@ -1937,6 +1964,7 @@
 
     async function openCase(caseId) {
       if (!caseId) return;
+      const request = ++caseDetailRequest;
       currentCaseId = caseId;
       const drawer = $("#case-drawer");
       drawer.hidden = false;
@@ -1946,13 +1974,15 @@
       $("#drawer-content").replaceChildren(Object.assign(document.createElement("p"), { className: "loading", textContent: "載入中…" }));
       try {
         const data = await auth("adminGetCase", { caseId: caseId });
+        if (request !== caseDetailRequest || currentCaseId !== caseId || !token) return;
+        if (!data.caseData || data.caseData.caseId !== caseId) throw new Error("案件資料不一致，請重新開啟。");
         renderDetail(data.caseData);
       } catch (error) {
         if (isAuthError(error)) {
           closeDrawer();
           return showLogin(error.message);
         }
-        $("#drawer-content").textContent = error.message || "無法載入案件";
+        if (request === caseDetailRequest && token) $("#drawer-content").textContent = error.message || "無法載入案件";
       }
     }
 
@@ -2097,31 +2127,22 @@
     }
 
     async function saveCase(event) {
-      const button = event.currentTarget;
-      button.disabled = true;
-      button.textContent = "儲存中…";
+      const button = event.currentTarget, caseId = currentCaseId, request = caseDetailRequest;
+      if (button.disabled || !caseId || !token) return;
+      const status = $("#detail-status"), note = $("#detail-note");
+      const payload = { caseId, caseStatus: status.value, note: note.value };
+      button.disabled = status.disabled = note.disabled = true; button.textContent = "儲存中…";
       try {
-        await auth("adminUpdateCase", {
-          caseId: currentCaseId,
-          caseStatus: value("detail-status"),
-          note: value("detail-note")
-        });
-        toast("案件已儲存");
-        await refreshAll(true);
-        await openCase(currentCaseId);
-      } catch (error) {
-        if (isAuthError(error)) {
-          closeDrawer();
-          return showLogin(error.message);
-        }
-        toast(error.message || "儲存失敗");
-      } finally {
-        button.disabled = false;
-        button.textContent = "儲存案件狀態與備註";
-      }
+        await auth("adminUpdateCase", payload);
+        if (request !== caseDetailRequest || caseId !== currentCaseId || !token) return;
+        toast("案件已儲存"); await refreshAll(true);
+        if (request === caseDetailRequest && caseId === currentCaseId && token) await openCase(caseId);
+      } catch (error) { if (isAuthError(error)) return showLogin(error.message); if (!error.cancelled) toast(error.message || "儲存失敗"); }
+      finally { button.disabled = status.disabled = note.disabled = false; button.textContent = "儲存案件狀態與備註"; }
     }
 
     function closeDrawer() {
+      ++caseDetailRequest; $("#drawer-content").replaceChildren();
       $("#case-drawer").hidden = true;
       document.body.style.overflow = "";
       currentCaseId = "";
@@ -2239,8 +2260,9 @@ box.textContent = loginErrorMessage(error);
     });
 
     $("#logout-button").addEventListener("click", async () => {
-      try { await auth("adminLogout"); } catch (error) {}
+      const revoke = auth("adminLogout");
       showLogin("已安全登出。");
+      try { await revoke; } catch (error) {}
     });
     $("#refresh-button").addEventListener("click", () => refreshAll(false));
     $("#filter-form").addEventListener("submit", (event) => {
@@ -2306,7 +2328,7 @@ var CP_SERVICE_FIELDS = {
     ['leash','牽繩狀況',['乖巧隨行','會微微拉緊','看到人車或貓狗會激動暴衝','不適用／不確定']],
     ['hasVet','是否指定獸醫院',['是','否']],['vetName','獸醫院名稱'],['vetPhone','獸醫院電話'],['vetInfo','原紀錄獸醫院名稱與電話'],
     ['diseases','疾病紀錄（複選）',['心臟病','氣管塌陷','癲癇','關節問題','呼吸道疾病','過敏','皮膚病','其他疾病','以上皆無'],'multi'],['diseaseOther','其他病史'],
-    ['regularDeworming','是否定期驅蟲',['是','否']],['deworm','驅蟲時間',['半年內','一年','不太確定','其他']],['dewormOther','其他驅蟲說明'],
+    ['regularDeworming','是否定期驅蟲',['是','否','不確定']],['deworm','驅蟲時間',['半年內','一年','不太確定','其他']],['dewormOther','其他驅蟲說明'],
     ['preventative','滴劑／口服藥',['是','否','其他']],['preventativeOther','其他用藥說明'],['notes','注意事項']
   ],
   ruguan: [
@@ -2324,22 +2346,23 @@ var CP_SERVICE_FIELDS = {
 var CP_SERVICE_LABELS = {ruyuan:'入園',ruguan:'入館',qisu:'寄宿'};
 
 // Embedded inside the existing authenticated admin closure.
-let cpRequest=0,cpCurrent=null,cpBusy=false,cpLastQuery='';
+let cpRequest=0,cpCurrent=null,cpBusy=false,cpLastQuery='',cpWriteSequence=0;
 const cpOperations=new Map();
 const cpNode=(tag,text,cls)=>{const el=document.createElement(tag);if(text!=null)el.textContent=text;if(cls)el.className=cls;return el;};
 function cpButton(label,callback,secondary=true){const b=cpNode('button',label,'btn'+(secondary?' secondary':''));b.type='button';b.addEventListener('click',callback);return b;}
 function cpMessage(message,error=false){const m=document.getElementById('cp-message');m.textContent=message||'';m.className=error?'cp-warning':'cp-note';}
 function cpOperation(){return 'OP-'+crypto.randomUUID();}
-async function cpRead(action,extra){return auth(action,extra);}
+async function cpRead(action,extra){try{return await auth(action,extra);}catch(e){if(isAuthError(e))showLogin(e.message);throw e;}}
 async function cpWrite(action,extra,callback){
   if(cpBusy)return;cpBusy=true;
-  const request=cpRequest;
-  const buttons=Array.from(document.querySelectorAll('#cp-drawer button'));buttons.forEach(b=>b.disabled=true);
+  const request=cpRequest,operation=++cpWriteSequence;
+  const controls=Array.from(document.querySelectorAll('#cp-drawer button,#cp-drawer input,#cp-drawer textarea,#cp-drawer select')).map(el=>({el,disabled:el.disabled}));
+  controls.forEach(({el})=>el.disabled=true);document.getElementById('cp-content').setAttribute('aria-busy','true');
   const status=cpNode('p','正在儲存，請勿重複按下…','cp-note');document.getElementById('cp-content').append(status);
   const key=action+JSON.stringify(extra);if(!cpOperations.has(key))cpOperations.set(key,cpOperation());
   try{const data=await cpRead(action,Object.assign({operationId:cpOperations.get(key)},extra));cpOperations.delete(key);if(request!==cpRequest||!token)return;callback(data);cpMessage(data.projectionReady===false?'客戶檔案已保存；試算表名冊待同步，請勿重複建檔。':'已儲存客戶檔案；舊案件與 PDF 未變更。');}
-  catch(e){status.textContent=e.message;status.className='cp-warning';if(isAuthError(e))showLogin(e.message);}
-  finally{cpBusy=false;buttons.forEach(b=>b.disabled=false);}
+  catch(e){if(request!==cpRequest||!token)return;status.textContent=e.message;status.className='cp-warning';if(isAuthError(e))showLogin(e.message);}
+  finally{if(operation===cpWriteSequence){cpBusy=false;document.getElementById('cp-content').removeAttribute('aria-busy');controls.forEach(({el,disabled})=>el.disabled=disabled);}}
 }
 function cpFields(root,defs,values={}){
   const grid=cpNode('div',null,'cp-fields');root.append(grid);const readers={};
@@ -2363,7 +2386,7 @@ function cpDrawer(title){
   ++cpRequest;document.getElementById('cp-drawer-title').textContent=title;
   const root=document.getElementById('cp-content');root.replaceChildren();document.getElementById('cp-drawer').hidden=false;document.body.style.overflow='hidden';return root;
 }
-function cpClose(){if(cpBusy)return;++cpRequest;document.getElementById('cp-drawer').hidden=true;document.body.style.overflow='';if(!document.getElementById('cp-view').hidden)cpLoad();}
+function cpClose(){if(cpBusy)return;++cpRequest;document.getElementById('cp-drawer').hidden=true;document.getElementById('cp-content').replaceChildren();cpCurrent=null;document.body.style.overflow='';if(!document.getElementById('cp-view').hidden)cpLoad();}
 async function cpShow(){
   if(cpBusy)return;
   document.getElementById('cp-case-view').hidden=true;document.getElementById('cp-view').hidden=false;
@@ -2422,7 +2445,16 @@ async function cpSource(service,caseId){
     const attachBox=cpNode('section',null,'cp-box');attachBox.append(cpNode('h3','A. 已有共用客戶：連結這份案件'));
     const customerInput=document.createElement('input');customerInput.className='cp-search';customerInput.placeholder='貼上共用客戶編號 CUS-…';customerInput.setAttribute('aria-label','要連結的共用客戶編號');
     const candidates=cpNode('div');data.candidates.forEach(c=>candidates.append(cpButton(c.name+' '+c.id,()=>{customerInput.value=c.id;})));
-    attachBox.append(candidates,customerInput,cpButton('核對客戶及逐隻對應',async()=>{try{const target=await cpRead('adminProfilesGet',{customerId:customerInput.value.trim()});cpAttachEditor(source,target);}catch(e){attachBox.append(cpNode('p',e.message,'cp-warning'));}}));root.append(attachBox);
+    const attachButton=cpButton('核對客戶及逐隻對應',async()=>{
+      if(attachButton.disabled)return;const requestedCustomerId=customerInput.value.trim();
+      attachButton.disabled=true;customerInput.disabled=true;attachButton.textContent='正在核對…';
+      try{const target=await cpRead('adminProfilesGet',{customerId:requestedCustomerId});
+        if(request!==cpRequest||!token||document.getElementById('cp-drawer').hidden)return;
+        if(target.customer?.id!==requestedCustomerId)throw new Error('客戶資料不一致，請重新查詢。');
+        cpAttachEditor(source,target);
+      }catch(e){if(request===cpRequest&&token)attachBox.append(cpNode('p',e.message,'cp-warning'));}
+      finally{attachButton.disabled=false;customerInput.disabled=false;attachButton.textContent='核對客戶及逐隻對應';}
+    });attachBox.append(candidates,customerInput,attachButton);root.append(attachBox);
     const createBox=cpNode('section',null,'cp-box');createBox.append(cpNode('h3','B. 還沒有共用客戶：從此案件建立'));
     const owner=cpFields(createBox,CP_OWNER_FIELDS,source.owner);const confirm=document.createElement('input');confirm.type='checkbox';const label=cpNode('label');label.append(confirm,document.createTextNode(' 若有相同聯絡方式，我已核對是另一位客戶，另建檔案。'));createBox.append(label,cpButton('建立客戶並匯入本案全部毛孩',()=>cpWrite('adminProfilesCreate',{service,caseId,owner:owner(),confirmSeparate:confirm.checked},cpRender),false));root.append(createBox);
   }catch(e){if(request===cpRequest)root.replaceChildren(cpNode('p',e.message,'cp-warning'));}
