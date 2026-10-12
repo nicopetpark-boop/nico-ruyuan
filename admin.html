@@ -698,7 +698,9 @@
       .unified-detail-grid { grid-template-columns:1fr; }
     }
 
-  </style>
+  .cp-toolbar,.cp-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:16px 0}.cp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}.cp-box{border:1px solid #d8cec4;border-radius:18px;padding:20px;background:#fffdfa;margin:16px 0}.cp-box h3,.cp-box h4{margin:0 0 12px}.cp-box p{line-height:1.7}.cp-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}.cp-fields label{display:grid;gap:8px;min-width:0}.cp-fields input,.cp-fields select,.cp-fields textarea,.cp-search{width:100%;padding:12px;border:1px solid #c5b7a9;border-radius:10px;background:white;color:#443a32;font:inherit;box-sizing:border-box}.cp-fields textarea{min-height:90px}.cp-fields select[multiple]{min-height:150px}.cp-fields fieldset{border:1px solid #ddd2c8;border-radius:10px}.cp-fields fieldset label{display:flex;align-items:center;gap:10px;margin:8px}.cp-fields input[type=checkbox]{width:auto}.cp-note{color:#756351;font-size:.92rem;line-height:1.7}.cp-warning{color:#9e3925;font-weight:700}.cp-box details{margin:14px 0}.cp-box summary{font-weight:700;cursor:pointer;padding:14px;background:#f0e7dc;border-radius:10px}.cp-box details>.cp-fields{margin-top:16px}.cp-selected{border:2px solid #645142}.cp-public{margin:20px 0;padding:20px;border:2px solid #b69c83;border-radius:20px;background:#fffdf8}.cp-public summary{font-weight:700;cursor:pointer;font-size:1.1rem}.cp-public .cp-fields{margin:18px 0}.cp-pick{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid #ded2c5;border-radius:12px;margin:10px 0}.cp-pick input{width:auto;flex:0 0 auto;margin-top:6px}.cp-public button{padding:12px 20px;border-radius:12px;border:1px solid #8f7864;background:#574639;color:white;font:inherit;font-weight:700;cursor:pointer}.cp-public button:disabled{opacity:.6;cursor:wait}.cp-public [hidden],#cp-view[hidden],#cp-drawer[hidden],#cp-case-view[hidden]{display:none!important}#cp-drawer{z-index:80}#cp-drawer .drawer-panel{max-width:1050px}#cp-message{white-space:pre-wrap}#cp-nav [aria-pressed=true]{background:#574639;color:white}
+
+</style>
 </head>
 <body>
   <section class="login-shell" id="login-view">
@@ -752,7 +754,8 @@
       </div>
 
       
-      <section class="unified-console" aria-labelledby="unified-title">
+      <nav id="cp-nav" class="cp-toolbar" aria-label="管理區域"><button type="button" class="btn secondary" id="cp-nav-cases" aria-pressed="true">案件管理</button><button type="button" class="btn secondary" id="cp-nav-profiles" aria-pressed="false">客戶與毛孩</button></nav>
+<div id="cp-case-view"><section class="unified-console" aria-labelledby="unified-title">
         <div class="surface">
           <div class="unified-head">
             <div>
@@ -894,6 +897,10 @@
           </section>
         </aside>
       </div>
+</div><section id="cp-view" hidden class="surface" aria-labelledby="cp-title">
+<h2 id="cp-title">客戶與毛孩</h2><p class="cp-note">三站共用的目前名冊。新增毛孩不必重填整張表單，不會建立假案件；歷史案件與 PDF 保留當時版本。</p>
+<div class="cp-toolbar"><input class="cp-search" style="max-width:600px" id="cp-query" aria-label="搜尋客戶或未連結案件" placeholder="姓名、手機、信箱、毛孩或案件編號"><button class="btn secondary" type="button" id="cp-search">搜尋／更新</button><button class="btn" type="button" id="cp-new">＋ 新增客戶</button></div>
+<p id="cp-message" role="status" aria-live="polite"></p><h3 id="cp-roster-count">客戶檔案</h3><div class="cp-grid" id="cp-roster"></div><h3 id="cp-unlinked-count">未連結歷史案件</h3><p class="cp-note">首次使用請先搜尋既有客人，從其中一份案件建立檔案，再將其他案件逐一連結。同名或同電話不會自動合併。</p><div class="cp-grid" id="cp-unlinked"></div></section>
     </main>
   </div>
 
@@ -926,6 +933,7 @@
     </div>
   </section>
 
+<section class="drawer" id="cp-drawer" role="dialog" aria-modal="true" aria-labelledby="cp-drawer-title" hidden><div class="drawer-panel"><header class="drawer-head"><h2 id="cp-drawer-title">客戶與毛孩</h2><button class="icon-btn" type="button" id="cp-drawer-close" aria-label="關閉客戶檔案">×</button></header><div id="cp-content"></div></div></section>
   <div class="toast" id="toast" role="status" hidden></div>
 
   <script>
@@ -1058,6 +1066,7 @@
     }
 
     function showLogin(message) {
+      ++cpRequest;cpCurrent=null;$("#cp-drawer").hidden=true;$("#cp-content").replaceChildren();$("#cp-roster").replaceChildren();$("#cp-unlinked").replaceChildren();
       setSession("");
       document.body.style.overflow = "";
       $("#app-view").hidden = true;
@@ -1509,6 +1518,7 @@
         if (!data.caseData || data.caseData.caseId !== caseId ||
             (data.caseData.service && data.caseData.service !== service)) throw new Error("案件資料不一致，請重新開啟案件。");
         renderUnifiedDrawer(data.caseData, { service, caseId, request });
+        $("#unified-drawer-content").prepend(cpButton("開啟／建立此客戶的毛孩名冊", () => { closeUnifiedDrawer(); cpSource(service,caseId); }));
       } catch (error) {
         if (request !== unifiedDetailRequest) return;
         if (isAuthError(error)) return showLogin(error.message);
@@ -2280,6 +2290,157 @@ box.textContent = loginErrorMessage(error);
       document.addEventListener(eventName, noteUserActivity, { passive: true });
     });
     // 持續登入：僅由手動登出、清除網站資料或密碼重設撤銷。
+
+// Shared field definitions for the store editor and authenticated prefill.
+var CP_OWNER_FIELDS = [
+  ['name','飼主姓名'],['phone','聯絡電話'],['email','電子信箱'],['lineName','LINE 名稱'],
+  ['address','地址／社區樓號'],['emergencyName','緊急聯絡人'],['emergencyPhone','緊急聯絡電話']
+];
+var CP_GENERAL_FIELDS = [
+  ['name','毛孩名字'],['species','貓或狗',['狗','貓']],['breed','品種'],
+  ['gender','性別',['男','女']],['age','年齡'],['weightKg','體重 kg'],
+  ['neutered','是否結紮',['是','否']],['chip','晶片號碼'],['rabiesProofUrl','狂犬病疫苗證明連結']
+];
+var CP_SERVICE_FIELDS = {
+  ruyuan: [
+    ['inHeat','是否發情',['是','否']],['sociability','親狗親人',['親狗親人','親狗不親人','親人不親狗','皆不親','不確定']],
+    ['guarding','護食／護玩具（複選）',['有護食、護玩具','突然被觸碰敏感部位會低吼','無此狀況','其他'],'multi'],['guardingOther','其他敏感行為'],
+    ['leash','牽繩狀況',['乖巧隨行','會微微拉緊','看到人車或貓狗會激動暴衝','不適用／不確定']],
+    ['hasVet','是否指定獸醫院',['是','否']],['vetName','獸醫院名稱'],['vetPhone','獸醫院電話'],['vetInfo','原紀錄獸醫院名稱與電話'],
+    ['diseases','疾病紀錄（複選）',['心臟病','氣管塌陷','癲癇','關節問題','呼吸道疾病','過敏','皮膚病','其他疾病','以上皆無'],'multi'],['diseaseOther','其他病史'],
+    ['regularDeworming','是否定期驅蟲',['是','否']],['deworm','驅蟲時間',['半年內','一年','不太確定','其他']],['dewormOther','其他驅蟲說明'],
+    ['preventative','滴劑／口服藥',['是','否','其他']],['preventativeOther','其他用藥說明'],['notes','注意事項']
+  ],
+  ruguan: [
+    ['preventative','是否定期投藥',['是','否']],['diseases','病史（複選）',['癲癇','心臟病','其他','無'],'multi'],['diseaseOther','其他病史'],
+    ['appetite','最近食慾',['馬上吃完','看心情吃','不吃']],['stool','最近排便',['正常','軟便','拉稀']],
+    ['walk','散步',['暴衝','不走草','不散步','備註']],['walkNote','散步備註'],['snack','館內點心',['是','否','食物過敏']],['snackAllergy','食物過敏說明']
+  ],
+  qisu: [
+    ['guardFood','護食或護玩具',['無','有']],['withPets','對人或其他毛孩',['友善','會緊張低吼','有攻擊經驗']],
+    ['anxiety','分離焦慮',['不明顯','會叫或破壞','不確定']],['behaviorNote','其他行為備註'],
+    ['mealMorning','早餐'],['mealNoon','午餐'],['mealNight','晚餐'],['allergen','過敏原'],['chronic','痼疾'],['medicine','餵藥名稱與時間'],
+    ['grassWalk','散步可否去草叢',['可以','不可以']],['regularMed','是否定期投藥',['是','否']]
+  ]
+};
+var CP_SERVICE_LABELS = {ruyuan:'入園',ruguan:'入館',qisu:'寄宿'};
+
+// Embedded inside the existing authenticated admin closure.
+let cpRequest=0,cpCurrent=null,cpBusy=false,cpLastQuery='';
+const cpOperations=new Map();
+const cpNode=(tag,text,cls)=>{const el=document.createElement(tag);if(text!=null)el.textContent=text;if(cls)el.className=cls;return el;};
+function cpButton(label,callback,secondary=true){const b=cpNode('button',label,'btn'+(secondary?' secondary':''));b.type='button';b.addEventListener('click',callback);return b;}
+function cpMessage(message,error=false){const m=document.getElementById('cp-message');m.textContent=message||'';m.className=error?'cp-warning':'cp-note';}
+function cpOperation(){return 'OP-'+crypto.randomUUID();}
+async function cpRead(action,extra){return auth(action,extra);}
+async function cpWrite(action,extra,callback){
+  if(cpBusy)return;cpBusy=true;
+  const request=cpRequest;
+  const buttons=Array.from(document.querySelectorAll('#cp-drawer button'));buttons.forEach(b=>b.disabled=true);
+  const status=cpNode('p','正在儲存，請勿重複按下…','cp-note');document.getElementById('cp-content').append(status);
+  const key=action+JSON.stringify(extra);if(!cpOperations.has(key))cpOperations.set(key,cpOperation());
+  try{const data=await cpRead(action,Object.assign({operationId:cpOperations.get(key)},extra));cpOperations.delete(key);if(request!==cpRequest||!token)return;callback(data);cpMessage(data.projectionReady===false?'客戶檔案已保存；試算表名冊待同步，請勿重複建檔。':'已儲存客戶檔案；舊案件與 PDF 未變更。');}
+  catch(e){status.textContent=e.message;status.className='cp-warning';if(isAuthError(e))showLogin(e.message);}
+  finally{cpBusy=false;buttons.forEach(b=>b.disabled=false);}
+}
+function cpFields(root,defs,values={}){
+  const grid=cpNode('div',null,'cp-fields');root.append(grid);const readers={};
+  defs.forEach(f=>{
+    const label=cpNode('label',f[1]);const current=values[f[0]];
+    let input;
+    if(f[3]==='multi'){
+      const group=cpNode('fieldset');group.append(cpNode('legend',f[1]));const checks=[];
+      (f[2]||[]).forEach(option=>{const item=cpNode('label');const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=Array.isArray(current)&&current.includes(option);item.append(checkbox,document.createTextNode(option));group.append(item);checks.push([checkbox,option]);});
+      readers[f[0]]=()=>checks.filter(([c])=>c.checked).map(([,v])=>v);grid.append(group);return;
+    }
+    if(f[2]){
+      input=document.createElement('select');input.append(new Option('未填／請選擇',''));f[2].forEach(option=>input.append(new Option(option,option)));
+      if(current&&!f[2].includes(current)){input.append(new Option('舊紀錄：'+current+'（請核對選項）',current));}
+    }else{input=document.createElement(/備註|說明|注意|早餐|午餐|晚餐|餵藥|痼疾|過敏/.test(f[1])?'textarea':'input');input.maxLength=f[0]==='rabiesProofUrl'?400:1000;}
+    input.value=current==null?'':String(current);input.dataset.cpField=f[0];label.append(input);grid.append(label);readers[f[0]]=()=>input.value.trim();
+  });
+  return ()=>Object.fromEntries(Object.entries(readers).map(([key,read])=>[key,read()]));
+}
+function cpDrawer(title){
+  ++cpRequest;document.getElementById('cp-drawer-title').textContent=title;
+  const root=document.getElementById('cp-content');root.replaceChildren();document.getElementById('cp-drawer').hidden=false;document.body.style.overflow='hidden';return root;
+}
+function cpClose(){if(cpBusy)return;++cpRequest;document.getElementById('cp-drawer').hidden=true;document.body.style.overflow='';if(!document.getElementById('cp-view').hidden)cpLoad();}
+async function cpShow(){
+  if(cpBusy)return;
+  document.getElementById('cp-case-view').hidden=true;document.getElementById('cp-view').hidden=false;
+  document.getElementById('cp-nav-cases').setAttribute('aria-pressed','false');document.getElementById('cp-nav-profiles').setAttribute('aria-pressed','true');
+  await cpLoad();
+}
+async function cpLoad(){
+  const request=++cpRequest;cpLastQuery=document.getElementById('cp-query').value.trim();cpMessage('正在讀取客戶檔案與未連結案件…');
+  try{
+    const data=await cpRead('adminProfilesList',{query:cpLastQuery});if(request!==cpRequest)return;
+    cpMessage((data.errors||[]).join('；'),!!data.errors?.length);
+    const roster=document.getElementById('cp-roster');roster.replaceChildren();
+    document.getElementById('cp-roster-count').textContent='客戶檔案 '+data.total+' 位（最多顯示 100 位，請用搜尋縮小範圍）';
+    if(!data.customers.length)roster.append(cpNode('p','尚無相符的共用客戶檔案。請從下方既有案件建立，或新增客戶。','cp-note'));
+    data.customers.forEach(c=>{const box=cpNode('article',null,'cp-box');box.append(cpNode('h3',c.owner.name+'｜'+c.petCount+' 隻'),cpNode('p',c.owner.phone+' · '+c.owner.email),cpNode('p',c.petNames.join('、')||'尚未登記毛孩'),cpButton('開啟客戶與毛孩',()=>cpOpen(c.id)));roster.append(box);});
+    const unlinked=document.getElementById('cp-unlinked');unlinked.replaceChildren();
+    document.getElementById('cp-unlinked-count').textContent='尚未連結的歷史案件 '+data.unlinkedTotal+' 筆（最多顯示 50 筆，可搜尋案件編號）';
+    data.unlinkedCases.forEach(c=>{const box=cpNode('article',null,'cp-box');box.append(cpNode('h3',CP_SERVICE_LABELS[c.service]+'｜'+c.ownerName),cpNode('p',c.caseId+' · '+c.submittedAt),cpNode('p',(c.petNames||[]).join('、')),cpButton('建立或連結客戶檔案',()=>cpSource(c.service,c.caseId)));unlinked.append(box);});
+  }catch(e){if(request===cpRequest)cpMessage(e.message,true);if(isAuthError(e))showLogin(e.message);}
+}
+async function cpOpen(id){
+  const root=cpDrawer('讀取客戶檔案…');const request=cpRequest;root.append(cpNode('p','載入中…'));
+  try{const data=await cpRead('adminProfilesGet',{customerId:id});if(request!==cpRequest)return;cpRender(data);}
+  catch(e){if(request===cpRequest)root.replaceChildren(cpNode('p',e.message,'cp-warning'));}
+}
+function cpRender(data){
+  cpCurrent=data;const c=data.customer;const root=cpDrawer(c.owner.name+'｜客戶與毛孩');
+  root.append(cpNode('p','客戶編號：'+c.id,'cp-note'),cpNode('p','這裡是目前的客戶與毛孩名冊，不是舊契約。店員修改後須由飼主於下次填表確認；不會改寫舊案件或舊 PDF。','cp-note'));
+  if(data.projectionReady===false)root.append(cpNode('p','客戶檔案已保存，但試算表名冊尚未同步。請勿重複建檔，請聯絡管理員核對名冊工作表。','cp-warning'));
+  if(data.candidates?.length)root.append(cpNode('p','有相同聯絡方式的其他檔案，請核對：'+data.candidates.map(x=>x.name+' '+x.id).join('；'),'cp-warning'));
+  const ownerBox=cpNode('section',null,'cp-box');ownerBox.append(cpNode('h3','飼主資料'));const ownerRead=cpFields(ownerBox,CP_OWNER_FIELDS,c.owner);
+  const separate=document.createElement('input');separate.type='checkbox';const separateLabel=cpNode('label');separateLabel.append(separate,document.createTextNode(' 若聯絡方式與他人相同，我已確認仍為不同客戶（不合併）'));ownerBox.append(separateLabel);
+  ownerBox.append(cpButton('儲存飼主資料',()=>cpWrite('adminProfilesSaveOwner',{customerId:c.id,revision:c.revision,owner:ownerRead(),confirmSeparate:separate.checked},cpRender),false));root.append(ownerBox);
+  const actions=cpNode('div',null,'cp-actions');actions.append(cpButton('＋ 新增毛孩',()=>cpPetEditor(data,null),false));
+  const sheetUrl=trustedAdminLink(data.sheetUrl);if(sheetUrl){const a=cpNode('a','開啟客戶／毛孩試算表 ↗','btn secondary');a.href=sheetUrl;a.target='_blank';a.rel='noopener noreferrer';actions.append(a);}root.append(cpNode('h3','名下毛孩 '+data.pets.length+' 隻'),cpNode('p','名冊不限五隻；每次服務表單最多選五隻。相同名字也會保留不同毛孩編號。','cp-note'),actions);
+  data.pets.forEach(p=>{const box=cpNode('article',null,'cp-box');box.append(cpNode('h3',(p.general.name||'未命名')+'｜'+(p.general.species||'待補貓／狗')),cpNode('p',p.id,'cp-note'),cpNode('p',(p.general.breed||'品種待補')+' · '+p.confirmation+' · '+p.source),cpButton('查看／編輯毛孩資料',()=>cpPetEditor(data,p)));root.append(box);});
+  const history=cpNode('section',null,'cp-box');history.append(cpNode('h3','已連結案件（當時資料與原 PDF）'));
+  data.links.forEach(link=>history.append(cpButton(CP_SERVICE_LABELS[link.service]+' '+link.caseId,()=>{cpClose();openUnifiedCase(link.service,link.caseId);})));if(!data.links.length)history.append(cpNode('p','尚未連結服務案件。'));root.append(history);
+  root.append(cpNode('p','要把另一份案件歸到此客人：關閉此視窗，在「未連結歷史案件」搜尋案件，按建立或連結，再選擇本客戶編號。','cp-note'));
+}
+function cpPetEditor(data,pet){
+  const root=cpDrawer(pet?'編輯 '+pet.general.name:'新增毛孩');
+  root.append(cpButton('← 返回客戶檔案',()=>cpRender(data)),cpNode('p','僅名字和貓／狗必填；其餘可先留空，下次由飼主補齊。此操作只更新名冊，不新增服務案件、不寄信。','cp-note'));
+  const box=cpNode('section',null,'cp-box');box.append(cpNode('h3','基本資料'));const general=cpFields(box,CP_GENERAL_FIELDS,pet?.general||{});root.append(box);
+  const readers={};Object.keys(CP_SERVICE_FIELDS).forEach(site=>{const section=cpNode('section',null,'cp-box');const fold=cpNode('details');fold.append(cpNode('summary',CP_SERVICE_LABELS[site]+'習慣與照護資料'));readers[site]=cpFields(fold,CP_SERVICE_FIELDS[site],pet?.services?.[site]||{});section.append(fold);root.append(section);});
+  root.append(cpNode('p','近期健康、發情、驅蟲日期、疫苗證明上傳與契約同意，仍須客人每次重新確認；這裡保留的連結僅供店員查閱。','cp-note'),cpButton('儲存毛孩（待飼主確認）',()=>cpWrite('adminProfilesSavePet',{customerId:data.customer.id,pet:{id:pet?.id||'',revision:pet?.revision,general:general(),services:Object.fromEntries(Object.entries(readers).map(([site,read])=>[site,read()]))}},cpRender),false));
+}
+function cpCreateBlank(){const root=cpDrawer('新增客戶檔案');root.append(cpNode('p','優先從既有案件建立，避免重複。這裡不會產生任何服務案件或 PDF。','cp-note'));const owner=cpFields(root,CP_OWNER_FIELDS);const confirm=document.createElement('input');confirm.type='checkbox';const label=cpNode('label');label.append(confirm,document.createTextNode(' 若電話／信箱已存在，我已確認是不同客戶，不要合併。'));root.append(label,cpButton('建立客戶',()=>cpWrite('adminProfilesCreate',{owner:owner(),confirmSeparate:confirm.checked},cpRender),false));}
+async function cpSource(service,caseId){
+  const root=cpDrawer('核對原始案件');const request=cpRequest;root.append(cpNode('p','正在讀取…'));
+  try{
+    const data=await cpRead('adminProfilesSourceCase',{service,caseId});if(request!==cpRequest)return;
+    if(data.linked)return cpOpen(data.linked.customerId);
+    root.replaceChildren();root.append(cpNode('h3',CP_SERVICE_LABELS[service]+'｜'+caseId),cpNode('p','先確認是同一位飼主。同名、同電話不會自動合併；每隻毛孩須逐一對應。','cp-note'));
+    const source=data.source;root.append(cpNode('p','案件毛孩：'+source.pets.map((p,i)=>(i+1)+'. '+p.general.name+(p.incomplete?'（原紀錄不完整，待補）':'')).join('、')));
+    const attachBox=cpNode('section',null,'cp-box');attachBox.append(cpNode('h3','A. 已有共用客戶：連結這份案件'));
+    const customerInput=document.createElement('input');customerInput.className='cp-search';customerInput.placeholder='貼上共用客戶編號 CUS-…';customerInput.setAttribute('aria-label','要連結的共用客戶編號');
+    const candidates=cpNode('div');data.candidates.forEach(c=>candidates.append(cpButton(c.name+' '+c.id,()=>{customerInput.value=c.id;})));
+    attachBox.append(candidates,customerInput,cpButton('核對客戶及逐隻對應',async()=>{try{const target=await cpRead('adminProfilesGet',{customerId:customerInput.value.trim()});cpAttachEditor(source,target);}catch(e){attachBox.append(cpNode('p',e.message,'cp-warning'));}}));root.append(attachBox);
+    const createBox=cpNode('section',null,'cp-box');createBox.append(cpNode('h3','B. 還沒有共用客戶：從此案件建立'));
+    const owner=cpFields(createBox,CP_OWNER_FIELDS,source.owner);const confirm=document.createElement('input');confirm.type='checkbox';const label=cpNode('label');label.append(confirm,document.createTextNode(' 若有相同聯絡方式，我已核對是另一位客戶，另建檔案。'));createBox.append(label,cpButton('建立客戶並匯入本案全部毛孩',()=>cpWrite('adminProfilesCreate',{service,caseId,owner:owner(),confirmSeparate:confirm.checked},cpRender),false));root.append(createBox);
+  }catch(e){if(request===cpRequest)root.replaceChildren(cpNode('p',e.message,'cp-warning'));}
+}
+function cpAttachEditor(source,target){
+  const root=cpDrawer('逐隻連結至 '+target.customer.owner.name);root.append(cpNode('p',source.caseId+' → '+target.customer.id),cpNode('p','請核對：案件飼主 '+source.owner.name+' '+source.owner.phone+'；客戶檔案 '+target.customer.owner.name+' '+target.customer.owner.phone,'cp-warning'));
+  const selectors=source.pets.map((p,i)=>{const label=cpNode('label',(i+1)+'. 案件毛孩 '+p.general.name,'cp-box');const select=document.createElement('select');select.className='cp-search';select.append(new Option('請選擇對應毛孩',''),new Option('這是另一隻，新增至名冊','NEW'));target.pets.forEach(existing=>select.append(new Option(existing.general.name+'｜'+existing.id,existing.id)));label.append(select);root.append(label);return select;});
+  const checked=document.createElement('input');checked.type='checkbox';const label=cpNode('label');label.append(checked,document.createTextNode(' 我已確認為同一位飼主，且逐隻對應正確。'));root.append(label,cpButton('確認連結（不改寫原案件）',()=>{if(!checked.checked||selectors.some(s=>!s.value)){root.append(cpNode('p','請完成逐隻對應並勾選確認。','cp-warning'));return;}cpWrite('adminProfilesAttachCase',{customerId:target.customer.id,service:source.service,caseId:source.caseId,petIds:selectors.map(s=>s.value)},cpRender);},false));
+}
+document.getElementById('cp-nav-profiles').addEventListener('click',cpShow);
+document.getElementById('cp-nav-cases').addEventListener('click',()=>{if(cpBusy)return;++cpRequest;document.getElementById('cp-case-view').hidden=false;document.getElementById('cp-view').hidden=true;document.getElementById('cp-nav-cases').setAttribute('aria-pressed','true');document.getElementById('cp-nav-profiles').setAttribute('aria-pressed','false');});
+document.getElementById('cp-search').addEventListener('click',cpLoad);
+document.getElementById('cp-query').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();cpLoad();}});
+document.getElementById('cp-new').addEventListener('click',cpCreateBlank);
+document.getElementById('cp-drawer-close').addEventListener('click',cpClose);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('cp-drawer').hidden)cpClose();});
 
     clearSensitiveUrlParams();
     token = localStorage.getItem(SESSION_KEY) || "";
