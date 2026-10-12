@@ -1495,7 +1495,9 @@
       .agree-glass p { animation: none; }
       .agree-check { stroke-dashoffset: 0; }
     }
-  </style>
+  .cp-toolbar,.cp-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:16px 0}.cp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}.cp-box{border:1px solid #d8cec4;border-radius:18px;padding:20px;background:#fffdfa;margin:16px 0}.cp-box h3,.cp-box h4{margin:0 0 12px}.cp-box p{line-height:1.7}.cp-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}.cp-fields label{display:grid;gap:8px;min-width:0}.cp-fields input,.cp-fields select,.cp-fields textarea,.cp-search{width:100%;padding:12px;border:1px solid #c5b7a9;border-radius:10px;background:white;color:#443a32;font:inherit;box-sizing:border-box}.cp-fields textarea{min-height:90px}.cp-fields select[multiple]{min-height:150px}.cp-fields fieldset{border:1px solid #ddd2c8;border-radius:10px}.cp-fields fieldset label{display:flex;align-items:center;gap:10px;margin:8px}.cp-fields input[type=checkbox]{width:auto}.cp-note{color:#756351;font-size:.92rem;line-height:1.7}.cp-warning{color:#9e3925;font-weight:700}.cp-box details{margin:14px 0}.cp-box summary{font-weight:700;cursor:pointer;padding:14px;background:#f0e7dc;border-radius:10px}.cp-box details>.cp-fields{margin-top:16px}.cp-selected{border:2px solid #645142}.cp-public{margin:20px 0;padding:20px;border:2px solid #b69c83;border-radius:20px;background:#fffdf8}.cp-public summary{font-weight:700;cursor:pointer;font-size:1.1rem}.cp-public .cp-fields{margin:18px 0}.cp-pick{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid #ded2c5;border-radius:12px;margin:10px 0}.cp-pick input{width:auto;flex:0 0 auto;margin-top:6px}.cp-public button{padding:12px 20px;border-radius:12px;border:1px solid #8f7864;background:#574639;color:white;font:inherit;font-weight:700;cursor:pointer}.cp-public button:disabled{opacity:.6;cursor:wait}.cp-public [hidden],#cp-view[hidden],#cp-drawer[hidden],#cp-case-view[hidden]{display:none!important}#cp-drawer{z-index:80}#cp-drawer .drawer-panel{max-width:1050px}#cp-message{white-space:pre-wrap}#cp-nav [aria-pressed=true]{background:#574639;color:white}
+
+</style>
 </head>
 <body class="welcome-open">
   <div class="bg-paw" aria-hidden="true">
@@ -2396,6 +2398,7 @@
 
     function fillPet(card, data) {
       const d = data || {};
+      card.dataset.profilePetId = String(d.profilePetId || "");
       const care = d.care || d;
       cardSet(card, "name", d.name || "");
       cardSet(card, "species", d.species || "");
@@ -2433,6 +2436,7 @@
 
     function collectPet(card) {
       return {
+        profilePetId: card.dataset.profilePetId || "",
         name: cardVal(card, "name"),
         species: cardRadio(card, "species"),
         gender: cardRadio(card, "gender"),
@@ -3180,7 +3184,7 @@
         if (!res.ok) {
           throw new AppError((data && (data.message || data.error)) || "伺服器暫時無法處理，請稍後再試。");
         }
-        return data;
+        return await cpFinalize(payload,data);
       } catch (err) {
         if (err instanceof AppError) throw err;
         if (err && err.name === "AbortError") {
@@ -3745,6 +3749,90 @@
       });
       setIdx(0);
     })();
+const CP_SITE="ruyuan";
+// CP_SITE is supplied by the build. No login token or private store notes are exposed.
+const CP_API='https://nico-api-proxy.nicopetpark.workers.dev/ruyuan';
+const CP_TICKET_KEY='nico-profile-ticket-v1-'+CP_SITE;
+const CP_PENDING_KEY='nico-profile-pending-v1-'+CP_SITE;
+let cpPublicGrant=null,cpPublicBusy=false,cpCooldown=0,cpChoiceData=null;
+try{const saved=JSON.parse(sessionStorage.getItem(CP_TICKET_KEY)||'null');if(saved&&saved.expiresAt>Date.now())cpPublicGrant=saved;}catch(e){}
+function cpEl(tag,text,cls){const el=document.createElement(tag);if(text!=null)el.textContent=text;if(cls)el.className=cls;return el;}
+async function cpPublicApi(payload,timeout=30000){
+  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeout);
+  try{
+    const res=await fetch(CP_API,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:'payload='+encodeURIComponent(JSON.stringify(payload)),signal:controller.signal});
+    let data;try{data=JSON.parse(await res.text());}catch(e){throw new Error('客戶檔案服務回應異常，請稍後再試。');}
+    if(!res.ok||!data||data.success===false||data.ok===false)throw new Error(data?.message||'客戶檔案服務暫時無法使用。');return data;
+  }catch(e){if(e.name==='AbortError')throw new Error('讀取客戶檔案逾時，請稍後再試。');throw e;}
+  finally{clearTimeout(timer);}
+}
+function cpPublicMessage(message,error=false){const el=document.getElementById('cp-public-message');if(el){el.textContent=message;el.className=error?'cp-warning':'cp-note';}}
+async function cpPublicTask(button,work){
+  if(cpPublicBusy)return;cpPublicBusy=true;const buttons=Array.from(document.querySelectorAll('#cp-public button'));buttons.forEach(b=>b.disabled=true);const label=button.textContent;button.textContent='處理中，請勿重複按下…';
+  try{await work();}catch(e){cpPublicMessage(e.message||'服務暫時無法使用，請稍後再試。',true);}
+  finally{cpPublicBusy=false;buttons.forEach(b=>b.disabled=false);button.textContent=label;cpPublicCooldown();}
+}
+function cpPublicCooldown(){const button=document.getElementById('cp-send');if(!button)return;const remaining=Math.ceil((cpCooldown-Date.now())/1000);if(remaining>0){button.disabled=true;button.textContent='重新寄送（'+remaining+' 秒）';setTimeout(cpPublicCooldown,1000);}else if(!cpPublicBusy){button.disabled=false;button.textContent='寄送帶入資料驗證碼';}}
+function cpPublicMount(){
+  const owner=document.getElementById('ownerName');if(!owner)return;
+  const panel=cpEl('details',null,'cp-public');panel.id='cp-public';panel.append(cpEl('summary','舊客快速帶入｜選擇已登記毛孩'));
+  panel.append(cpEl('p','店員已建立共用客戶檔案的客人，可驗證原登記信箱與手機後帶入。本次服務仍需核對資料、填寫近期健康與重新簽署；最後送出時另有契約驗證碼。','cp-note'));
+  const grid=cpEl('div',null,'cp-fields');
+  [['cp-email','原登記電子信箱','email'],['cp-phone','原登記手機','tel'],['cp-customer','共用客戶編號（一般留空）','text'],['cp-otp','帶入資料驗證碼（6 碼）','text']].forEach(([id,label,type])=>{const field=cpEl('label',label);const input=document.createElement('input');input.id=id;input.type=type;input.maxLength=id==='cp-otp'?6:120;if(id==='cp-otp')input.inputMode='numeric';input.autocomplete=id==='cp-otp'?'one-time-code':'off';field.append(input);grid.append(field);});panel.append(grid);
+  const send=cpEl('button','寄送帶入資料驗證碼');send.type='button';send.id='cp-send';
+  send.addEventListener('click',()=>cpPublicTask(send,async()=>{const email=document.getElementById('cp-email').value.trim();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('請輸入原登記電子信箱。');cpPublicMessage('正在寄送驗證碼，請勿再次按下。');await cpPublicApi({action:'profileSendOtp',email});cpCooldown=Date.now()+60000;cpPublicMessage('已寄出帶入資料驗證碼，請查看信箱（也請檢查垃圾郵件）。');}));
+  const verify=cpEl('button','驗證並顯示名下毛孩');verify.type='button';verify.addEventListener('click',()=>cpPublicTask(verify,async()=>{
+    cpPublicMessage('正在驗證與讀取毛孩，請稍候…');
+    const data=await cpPublicApi({action:'profilePrefill',service:CP_SITE,email:document.getElementById('cp-email').value.trim(),phone:document.getElementById('cp-phone').value.trim(),customerId:document.getElementById('cp-customer').value.trim(),otp:document.getElementById('cp-otp').value.trim()});
+    cpChoiceData=data;document.getElementById('cp-otp').value='';cpPublicChoices(data);cpPublicMessage('驗證完成，請勾選本次服務的毛孩，最多五隻。');
+  }));
+  const actions=cpEl('div',null,'cp-actions');actions.append(send,verify);const message=cpEl('p','不帶入也可以直接填寫新表單。','cp-note');message.id='cp-public-message';message.setAttribute('role','status');message.setAttribute('aria-live','polite');const choices=cpEl('div');choices.id='cp-public-choices';panel.append(actions,message,choices);
+  owner.closest('.stack').before(panel);
+}
+function cpPublicChoices(data){
+  const root=document.getElementById('cp-public-choices');root.replaceChildren();root.append(cpEl('h3',data.owner.name+'｜共 '+data.pets.length+' 隻毛孩'));
+  if(!data.pets.length){root.append(cpEl('p','目前名冊尚無毛孩，可繼續手動填寫，或請店員補登。'));return;}
+  const checks=[];data.pets.forEach((pet,index)=>{const label=cpEl('label',null,'cp-pick');const input=document.createElement('input');input.type='checkbox';input.dataset.profilePetId=pet.profilePetId;const text=cpEl('span',(index+1)+'. '+pet.name+'｜'+(pet.species||'待確認')+'｜'+(pet.breed||'品種待補')+'\n'+pet.profilePetId+'\n'+pet.profileConfirmation);label.append(input,text);root.append(label);checks.push([input,pet]);input.addEventListener('change',()=>{if(checks.filter(([c])=>c.checked).length>5){input.checked=false;cpPublicMessage('每次服務最多五隻；其他毛孩仍保留在名冊。',true);}});});
+  const confirm=document.createElement('input');confirm.type='checkbox';const confirmLabel=cpEl('label',null,'cp-pick');confirmLabel.append(confirm,cpEl('span','使用選取毛孩取代目前表單的毛孩清單及飼主聯絡資料。我會再逐項確認內容，並補上本次必填資料。'));root.append(confirmLabel);
+  const apply=cpEl('button','帶入選取毛孩');apply.type='button';root.append(apply);
+  apply.addEventListener('click',()=>{
+    const pets=checks.filter(([c])=>c.checked).map(([,p])=>p);if(!pets.length||pets.length>5||!confirm.checked){cpPublicMessage('請選一至五隻毛孩，並勾選取代清單確認。',true);return;}
+    const o=data.owner;[['ownerName',o.name],['ownerPhone',o.phone],['ownerEmail',o.email],['lineName',o.lineName],['ownerLine',o.lineName],['ownerAddress',o.address],['emergencyName',o.emergencyName],['emergencyPhone',o.emergencyPhone]].forEach(([id,value])=>{const el=document.getElementById(id);if(el&&value){el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));}});
+    if(CP_SITE==='qisu'&&o.address){
+      const city=document.getElementById('addrCity');const text=String(o.address);const selected=Array.from(city.options).find(option=>option.value&&text.startsWith(option.value));
+      if(selected){city.value=selected.value;fillDistrictSelect('');const district=document.getElementById('addrDistrict');const rest=text.slice(selected.value.length);const match=Array.from(district.options).find(option=>option.value&&rest.startsWith(option.value));if(match){district.value=match.value;document.getElementById('addrStreet').value=rest.slice(match.value.length);}else{district.value='';document.getElementById('addrStreet').value=rest;}}
+      else{city.value='';fillDistrictSelect('');document.getElementById('addrStreet').value=text;cpPublicMessage('地址縣市需要重新選擇，原地址已放入街道欄。',true);}
+    }
+    document.getElementById('pets-root').replaceChildren();
+    if(CP_SITE==='qisu'){petCareStore={};document.getElementById('care-root').replaceChildren();}
+    pets.forEach(p=>addPet(p));if(CP_SITE==='qisu')renderCareCards();else syncReveals();refreshPetChrome();
+    cpPublicGrant={ticket:data.profileTicket,customerId:data.customerId,expiresAt:Date.now()+data.expiresIn*1000};try{sessionStorage.setItem(CP_TICKET_KEY,JSON.stringify(cpPublicGrant));}catch(e){}
+    saveDraft();cpPublicMessage('已帶入 '+pets.length+' 隻。請逐項核對；店員補登資料仍需您確認。近期健康、疫苗證明及契約同意不會自動勾選。');root.replaceChildren();
+  });
+}
+async function cpFinalize(payload,data){
+  if(payload.action!=='submit'||!cpPublicGrant)return data;
+  const caseId=data.caseId||data.case_id||data.recordId||data.ticketId||data.id;
+  if(!caseId)return data;
+  const pending={action:'profileRecordCase',profileTicket:cpPublicGrant.ticket,service:CP_SITE,caseId,petIds:(payload.form?.pets||[]).map(p=>p.profilePetId||'')};
+  try{sessionStorage.setItem(CP_PENDING_KEY,JSON.stringify(pending));}catch(e){}
+  try{
+    await cpPublicApi(pending,12000);try{sessionStorage.removeItem(CP_PENDING_KEY);sessionStorage.removeItem(CP_TICKET_KEY);}catch(e){}cpPublicGrant=null;
+    data.message=(data.message||'資料已成功送出。')+' 已連結至共用客戶檔案。';
+  }catch(e){
+    data.message=(data.message||'資料已成功送出。')+' 案件已保存，但客戶名冊連結尚未完成；不必重送表單，店員可從此案件連結。';
+    cpPendingButton(pending);
+  }
+  cpPublicGrant=null;try{sessionStorage.removeItem(CP_TICKET_KEY);}catch(e){}
+  return data;
+}
+function cpPendingButton(pending){
+  const panel=document.getElementById('step-success');if(!panel||document.getElementById('cp-retry'))return;
+  const box=cpEl('div',null,'cp-public');const status=cpEl('p','案件已保存，不必重送。只需補做名冊連結。','cp-note');const button=cpEl('button','重新連結客戶名冊（不重送案件）');button.id='cp-retry';button.type='button';
+  button.addEventListener('click',async()=>{if(button.disabled)return;button.disabled=true;status.textContent='正在連結名冊，不會再送出案件或寄信…';try{await cpPublicApi(pending);status.textContent='客戶名冊已連結完成。';button.hidden=true;try{sessionStorage.removeItem(CP_PENDING_KEY);sessionStorage.removeItem(CP_TICKET_KEY);}catch(e){}}catch(e){status.textContent=e.message+' 請提供案件編號給店員。';button.disabled=false;}});box.append(status,button);panel.append(box);
+}
+cpPublicMount();
+
   })();
   </script>
 </body>
