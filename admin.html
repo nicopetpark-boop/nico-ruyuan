@@ -802,7 +802,7 @@
         </div>
       </section>
 
-      <section class="metrics" aria-label="入園案件統計">
+      <section class="metrics" aria-label="入園案件統計" hidden>
         <article class="metric" style="--tone:#E6D1C2"><span>今日新增</span><strong id="stat-today">—</strong></article>
         <article class="metric" style="--tone:#E9DFC2"><span>待處理</span><strong id="stat-pending">—</strong></article>
         <article class="metric" style="--tone:#CFDDD4"><span>已確認</span><strong id="stat-confirmed">—</strong></article>
@@ -1080,6 +1080,7 @@
       cpCurrent = null; cpBusy = false; cpOperations.clear(); unifiedData = null;
       currentCaseId = ""; unifiedSelectedService = ""; unifiedSelectedCaseId = "";
       setSession("");
+      refreshInFlight = false; $("#refresh-button").disabled = false;
       ["#cp-drawer", "#unified-drawer", "#case-drawer"].forEach(id => $(id).hidden = true);
       ["#cp-content", "#cp-roster", "#cp-unlinked", "#unified-drawer-content", "#drawer-content",
        "#unified-tbody", "#unified-mobile-cases", "#case-tbody", "#mobile-cases", "#customer-results", "#status-overview"].forEach(id => $(id)?.replaceChildren());
@@ -1844,8 +1845,7 @@
         $("#last-sync").textContent = "保留上次資料 · 請按重新整理";
         toast(error.message || "載入失敗");
       } finally {
-        refreshInFlight = false;
-        button.disabled = false;
+        if (epoch === sessionEpoch) { refreshInFlight = false; button.disabled = false; }
       }
     }
 
