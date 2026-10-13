@@ -740,6 +740,7 @@ main{padding-top:22px}.page-head{margin-bottom:16px}.page-head h1{font-size:25px
 .btn.ghost:hover:not(:disabled){background:#eae0d4;color:var(--cocoa-deep)}
 .status[data-status="已做完"]{--tone-bg:#e2e7e9;--tone-text:#526771}
 @media(max-width:760px){.drawer-head{margin-left:-15px;margin-right:-15px;padding-left:15px;padding-right:15px}}
+#cp-results[hidden]{display:none!important}#cp-all[aria-pressed=true]{background:var(--cocoa);color:#fff}
 
 </style>
 </head>
@@ -936,8 +937,8 @@ main{padding-top:22px}.page-head{margin-bottom:16px}.page-head h1{font-size:25px
       </div>
 </div><section id="cp-view" hidden class="surface" aria-labelledby="cp-title">
 <h2 id="cp-title">客戶／毛孩名冊</h2>
-<div class="cp-toolbar"><input class="cp-search" style="max-width:600px" id="cp-query" aria-label="搜尋客戶或未連結案件" placeholder="姓名、手機、信箱、毛孩或案件編號"><button class="btn secondary" type="button" id="cp-search">搜尋／更新</button><button class="btn" type="button" id="cp-new">＋ 新增客戶</button></div>
-<p id="cp-message" role="status" aria-live="polite"></p><h3 id="cp-roster-count">客戶檔案</h3><div class="cp-grid" id="cp-roster"></div><h3 id="cp-unlinked-count">未連結歷史案件</h3><p class="cp-note">首次使用請先搜尋既有客人，從其中一份案件建立檔案，再將其他案件逐一連結。同名或同電話不會自動合併。</p><div class="cp-grid" id="cp-unlinked"></div></section>
+<div class="cp-toolbar"><input class="cp-search" type="search" maxlength="120" style="max-width:600px" id="cp-query" aria-label="搜尋客戶或未連結案件" placeholder="姓名、手機、信箱、毛孩或案件編號"><button class="btn secondary" type="button" id="cp-search">搜尋</button><button class="btn secondary" type="button" id="cp-all" aria-pressed="false">顯示全部客戶</button><button class="btn" type="button" id="cp-new">＋ 新增客戶</button></div>
+<p id="cp-message" role="status" aria-live="polite"></p><div id="cp-results" hidden><h3 id="cp-roster-count">客戶檔案</h3><div class="cp-grid" id="cp-roster"></div><h3 id="cp-unlinked-count">未連結歷史案件</h3><p class="cp-note">首次使用請先搜尋既有客人，從其中一份案件建立檔案，再將其他案件逐一連結。同名或同電話不會自動合併。</p><div class="cp-grid" id="cp-unlinked"></div></div></section>
     </main>
   </div>
 
@@ -1113,6 +1114,7 @@ main{padding-top:22px}.page-head{margin-bottom:16px}.page-head h1{font-size:25px
     }
 
     function showLogin(message) {
+      cpResetSearch();
       uiCaseFilter = ""; $("#public-form-menu").open = false;
       ++cpRequest; ++cpWriteSequence; ++unifiedDetailRequest; ++caseDetailRequest;
       ++caseListRequestSequence; ++unifiedSearchRequestSequence; ++customerSearchRequestSequence;
@@ -2335,6 +2337,7 @@ var CP_SERVICE_LABELS = {ruyuan:'入園',ruguan:'入館',qisu:'寄宿'};
 
 // Embedded inside the existing authenticated admin closure.
 let cpRequest=0,cpCurrent=null,cpBusy=false,cpLastQuery='',cpWriteSequence=0;
+let cpBrowseAll=false,cpSearchTimer=null;
 const cpOperations=new Map();
 const cpNode=(tag,text,cls)=>{const el=document.createElement(tag);if(text!=null)el.textContent=text;if(cls)el.className=cls;return el;};
 function cpButton(label,callback,secondary=true){const b=cpNode('button',label,'btn'+(secondary?' secondary':''));b.type='button';b.addEventListener('click',callback);return b;}
@@ -2379,19 +2382,44 @@ async function cpShow(){
   if(cpBusy)return;
   document.getElementById('cp-case-view').hidden=true;document.getElementById('cp-view').hidden=false;
   document.getElementById('cp-nav-cases').setAttribute('aria-pressed','false');document.getElementById('cp-nav-profiles').setAttribute('aria-pressed','true');
+  cpBrowseAll=false;
   await cpLoad();
 }
+function cpCancelSearchTimer(){clearTimeout(cpSearchTimer);cpSearchTimer=null;}
+function cpResetSearch(){
+  cpCancelSearchTimer();++cpRequest;cpBrowseAll=false;cpLastQuery='';
+  document.getElementById('cp-roster').replaceChildren();document.getElementById('cp-unlinked').replaceChildren();
+  document.getElementById('cp-results').hidden=true;document.getElementById('cp-all').setAttribute('aria-pressed','false');
+  document.getElementById('cp-roster-count').textContent='客戶檔案';document.getElementById('cp-unlinked-count').textContent='未連結歷史案件';
+  cpMessage('請輸入姓名、手機、信箱、毛孩名稱或案件編號，或按「顯示全部客戶」。');
+}
+function cpQueueSearch(event){
+  if(cpBusy)return;cpCancelSearchTimer();const query=document.getElementById('cp-query').value.trim();
+  if(!query){cpResetSearch();return;}
+  ++cpRequest;cpBrowseAll=false;document.getElementById('cp-all').setAttribute('aria-pressed','false');
+  document.getElementById('cp-roster').replaceChildren();document.getElementById('cp-unlinked').replaceChildren();document.getElementById('cp-results').hidden=true;
+  cpMessage(event?.isComposing?'輸入完成後即可搜尋。':'搜尋中…');
+  if(!event?.isComposing)cpSearchTimer=setTimeout(()=>{cpSearchTimer=null;cpLoad();},300);
+}
+function cpSearch(){if(cpBusy)return;cpCancelSearchTimer();cpBrowseAll=false;return cpLoad();}
+function cpShowAll(){if(cpBusy)return;cpCancelSearchTimer();document.getElementById('cp-query').value='';cpBrowseAll=true;return cpLoad();}
 async function cpLoad(){
-  const request=++cpRequest;cpLastQuery=document.getElementById('cp-query').value.trim();cpMessage('正在讀取客戶檔案與未連結案件…');
+  if(cpBusy||document.getElementById('cp-view').hidden)return;cpCancelSearchTimer();const query=document.getElementById('cp-query').value.trim();
+  if(query)cpBrowseAll=false;if(!query&&!cpBrowseAll){cpResetSearch();return;}
+  const request=++cpRequest,all=cpBrowseAll;cpLastQuery=query;
+  document.getElementById('cp-roster').replaceChildren();document.getElementById('cp-unlinked').replaceChildren();document.getElementById('cp-results').hidden=true;
+  document.getElementById('cp-all').setAttribute('aria-pressed',String(all));cpMessage(all?'正在讀取全部客戶與未連結案件…':'搜尋中…');
   try{
-    const data=await cpRead('adminProfilesList',{query:cpLastQuery});if(request!==cpRequest)return;
+    const data=await cpRead('adminProfilesList',{query});if(request!==cpRequest||!token||document.getElementById('cp-view').hidden||document.getElementById('cp-query').value.trim()!==query||cpBrowseAll!==all)return;
     cpMessage((data.errors||[]).join('；'),!!data.errors?.length);
+    document.getElementById('cp-results').hidden=false;
     const roster=document.getElementById('cp-roster');roster.replaceChildren();
-    document.getElementById('cp-roster-count').textContent='客戶檔案 '+data.total+' 位（最多顯示 100 位，請用搜尋縮小範圍）';
+    document.getElementById('cp-roster-count').textContent=(all?'全部客戶檔案 ':'符合的客戶檔案 ')+data.total+' 位'+(data.total>data.customers.length?'（僅顯示前 100 位，請縮小搜尋範圍）':'');
     if(!data.customers.length)roster.append(cpNode('p','尚無相符的共用客戶檔案。請從下方既有案件建立，或新增客戶。','cp-note'));
     data.customers.forEach(c=>{const box=cpNode('article',null,'cp-box');box.append(cpNode('h3',c.owner.name+'｜'+c.petCount+' 隻'),cpNode('p',c.owner.phone+' · '+c.owner.email),cpNode('p',c.petNames.join('、')||'尚未登記毛孩'),cpButton('開啟客戶與毛孩',()=>cpOpen(c.id)));roster.append(box);});
     const unlinked=document.getElementById('cp-unlinked');unlinked.replaceChildren();
-    document.getElementById('cp-unlinked-count').textContent='尚未連結的歷史案件 '+data.unlinkedTotal+' 筆（最多顯示 50 筆，可搜尋案件編號）';
+    document.getElementById('cp-unlinked-count').textContent=(all?'全部未連結歷史案件 ':'符合的未連結歷史案件 ')+data.unlinkedTotal+' 筆'+(data.unlinkedTotal>data.unlinkedCases.length?'（僅顯示前 50 筆，請縮小搜尋範圍）':'');
+    if(!data.unlinkedCases.length)unlinked.append(cpNode('p','沒有符合的未連結歷史案件。','cp-note'));
     data.unlinkedCases.forEach(c=>{const box=cpNode('article',null,'cp-box');box.append(cpNode('h3',CP_SERVICE_LABELS[c.service]+'｜'+c.ownerName),cpNode('p',c.caseId+' · '+c.submittedAt),cpNode('p',(c.petNames||[]).join('、')),cpButton('建立或連結客戶檔案',()=>cpSource(c.service,c.caseId)));unlinked.append(box);});
   }catch(e){if(request===cpRequest)cpMessage(e.message,true);if(isAuthError(e))showLogin(e.message);}
 }
@@ -2454,8 +2482,11 @@ function cpAttachEditor(source,target){
 }
 document.getElementById('cp-nav-profiles').addEventListener('click',cpShow);
 document.getElementById('cp-nav-cases').addEventListener('click',()=>{if(cpBusy)return;++cpRequest;document.getElementById('cp-case-view').hidden=false;document.getElementById('cp-view').hidden=true;document.getElementById('cp-nav-cases').setAttribute('aria-pressed','true');document.getElementById('cp-nav-profiles').setAttribute('aria-pressed','false');});
-document.getElementById('cp-search').addEventListener('click',cpLoad);
-document.getElementById('cp-query').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();cpLoad();}});
+document.getElementById('cp-search').addEventListener('click',cpSearch);
+document.getElementById('cp-all').addEventListener('click',cpShowAll);
+document.getElementById('cp-query').addEventListener('input',cpQueueSearch);
+document.getElementById('cp-query').addEventListener('compositionend',cpQueueSearch);
+document.getElementById('cp-query').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();cpSearch();}});
 document.getElementById('cp-new').addEventListener('click',cpCreateBlank);
 document.getElementById('cp-drawer-close').addEventListener('click',cpClose);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('cp-drawer').hidden)cpClose();});
@@ -2493,6 +2524,7 @@ function uiSelectService(service){
   $('#unified-filter-form').dispatchEvent(new Event('submit',{cancelable:true}));
 }
 function uiInit(){
+  cpResetSearch();
   document.querySelectorAll('[data-ui-filter]').forEach(b=>b.addEventListener('click',()=>uiChooseFilter(b.dataset.uiFilter)));
   $('#ui-clear-filter').addEventListener('click',()=>uiChooseFilter(''));
   $('#ui-forms-shortcut').addEventListener('click',e=>{e.preventDefault();$('#public-form-menu').open=true;$('#public-form-menu summary').focus();});
