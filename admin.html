@@ -700,6 +700,47 @@
 
   .cp-toolbar,.cp-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:16px 0}.cp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}.cp-box{border:1px solid #d8cec4;border-radius:18px;padding:20px;background:#fffdfa;margin:16px 0}.cp-box h3,.cp-box h4{margin:0 0 12px}.cp-box p{line-height:1.7}.cp-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}.cp-fields label{display:grid;gap:8px;min-width:0}.cp-fields input,.cp-fields select,.cp-fields textarea,.cp-search{width:100%;padding:12px;border:1px solid #c5b7a9;border-radius:10px;background:white;color:#443a32;font:inherit;box-sizing:border-box}.cp-fields textarea{min-height:90px}.cp-fields select[multiple]{min-height:150px}.cp-fields fieldset{border:1px solid #ddd2c8;border-radius:10px}.cp-fields fieldset label{display:flex;align-items:center;gap:10px;margin:8px}.cp-fields input[type=checkbox]{width:auto}.cp-note{color:#756351;font-size:.92rem;line-height:1.7}.cp-warning{color:#9e3925;font-weight:700}.cp-box details{margin:14px 0}.cp-box summary{font-weight:700;cursor:pointer;padding:14px;background:#f0e7dc;border-radius:10px}.cp-box details>.cp-fields{margin-top:16px}.cp-selected{border:2px solid #645142}.cp-public{margin:20px 0;padding:20px;border:2px solid #b69c83;border-radius:20px;background:#fffdf8}.cp-public summary{font-weight:700;cursor:pointer;font-size:1.1rem}.cp-public .cp-fields{margin:18px 0}.cp-pick{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid #ded2c5;border-radius:12px;margin:10px 0}.cp-pick input{width:auto;flex:0 0 auto;margin-top:6px}.cp-public button{padding:12px 20px;border-radius:12px;border:1px solid #8f7864;background:#574639;color:white;font:inherit;font-weight:700;cursor:pointer}.cp-public button:disabled{opacity:.6;cursor:wait}.cp-public [hidden],#cp-view[hidden],#cp-drawer[hidden],#cp-case-view[hidden]{display:none!important}#cp-drawer{z-index:80}#cp-drawer .drawer-panel{max-width:1050px}#cp-message{white-space:pre-wrap}#cp-nav [aria-pressed=true]{background:#574639;color:white}
 
+/* 2026-10-13: compact, task-first admin UI. Native controls stay keyboard-accessible. */
+.btn{border-radius:12px;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background .15s,box-shadow .15s;cursor:pointer;text-decoration:none}
+.btn.secondary:hover:not(:disabled){background:#eae0d4;color:var(--cocoa-deep)}
+button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visible{outline:3px solid #87725d;outline-offset:3px}
+.btn:disabled{cursor:wait;opacity:.65}
+.topbar{z-index:50}.topbar-inner{min-height:66px}.brand strong{font-size:15px}.brand span{font-size:11px}
+.top-actions{gap:12px}.top-actions #logout-button{border-left:1px solid var(--line);border-radius:0;padding-left:16px;min-height:36px;font-size:12px}
+.form-menu{position:relative}.form-menu summary{list-style:none;min-height:40px;font-size:13px;white-space:nowrap;border:1px solid var(--line);background:#fffcf8}
+.form-menu summary::-webkit-details-marker{display:none}.form-menu svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.form-menu[open] summary{background:#eae0d4}.form-menu nav{position:absolute;right:0;top:calc(100% + 10px);width:218px;padding:8px;border:1px solid var(--line);border-radius:16px;background:#fffcf8;box-shadow:0 18px 40px #3f332b25;z-index:60}
+.form-menu a{display:flex;justify-content:space-between;padding:13px 14px;text-decoration:none;border-radius:9px;color:var(--ink);font-weight:600;font-size:14px}.form-menu a:hover{background:#f1e8de}
+main{padding-top:22px}.page-head{margin-bottom:16px}.page-head h1{font-size:25px}.sync-line{gap:8px}.sync-line .live-badge{font-size:11px}.sync-line #last-sync{font-size:11px}
+#cp-nav{margin:0 0 18px;gap:4px;display:inline-flex;background:#e6dbcf;border-radius:14px;padding:4px}#cp-nav .btn{min-height:40px;box-shadow:none;background:transparent;border-radius:11px;padding:8px 18px;font-size:13px}#cp-nav [aria-pressed=true]{box-shadow:0 2px 6px #3f332b18}
+.unified-console>.surface{padding:22px}.unified-head{align-items:center;margin-bottom:12px}.unified-head h2{font-size:18px}.unified-head #unified-badge{font-size:11px}.unified-metric-context{margin-bottom:10px}.unified-metric-context strong{font-size:12px;font-weight:600;color:var(--muted)}
+.unified-metrics{gap:10px;margin-bottom:16px}.unified-metric{text-align:left;font:inherit;cursor:pointer;padding:14px 16px;background:#fffcf8;border-radius:14px;transition:background .15s,border-color .15s}.unified-metric span{font-size:12px}.unified-metric strong{font-size:29px;margin:3px 0}.unified-metric small{font-size:11px;color:var(--muted)}.unified-metric small span{display:inline;font-size:12px}.unified-metric:hover{border-color:#a38c75;background:#f5eee5}.unified-metric[aria-pressed=true]{border-color:#87725d;box-shadow:inset 0 0 0 1px #87725d}.unified-metric.metric-priority{background:#f0e1d1;border-color:#dbc5ad}.metric-priority strong{color:#785436}.unified-metric:last-child:not([aria-pressed=true]){background:#f7f4ef}
+.service-overview{display:flex;gap:4px;padding:4px;background:#eee6dc;border-radius:13px;margin-bottom:14px;width:fit-content;max-width:100%}.service-card{border:0!important;box-shadow:none!important;border-radius:10px!important;display:flex!important;align-items:center;gap:9px;padding:9px 15px!important;min-height:42px;background:transparent;text-align:center;color:var(--muted);font:inherit;cursor:pointer}.service-card strong{font-size:13px}.service-card .ui-service-count{font-size:11px;padding:1px 6px;border-radius:6px;background:#ffffff90}.service-card[aria-pressed=true]{background:var(--cocoa);color:#fff}.service-card:hover:not([aria-pressed=true]){background:#fff9}
+.unified-filters{grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;margin-bottom:6px}.unified-filters .field{margin:0}.unified-filters .field label{font-size:12px}.unified-filters input{background:#fff;border:1px solid var(--line)}.ui-service-fallback[hidden]{display:none!important}
+.ui-filter-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;font-size:12px;color:var(--muted)}.ui-filter-bar .btn{min-height:30px;font-size:11px;padding:5px 8px}.ui-filter-bar [hidden]{display:none!important}.result-meta{font-size:11px;gap:8px;margin-top:8px}
+.ui-case-identity{min-width:155px}.ui-case-identity strong,.ui-case-identity span,.ui-case-identity small{display:block}.ui-case-identity strong{font-size:15px}.ui-case-identity span{font-size:13px;margin:4px 0}.ui-case-identity small,.ui-case-time{font-size:11px;color:var(--muted)}.ui-detail-open{min-height:36px;font-size:12px;padding:8px 10px;white-space:nowrap}.unified-alert,.unified-note{display:block;margin:4px 0;padding:8px 10px;border-radius:9px;line-height:1.55;font-size:12px}.unified-alert{background:#f6ebe0;color:#755133}.unified-note{background:#f0f1ec;color:#59624d}.unified-alert small,.unified-note small{display:block;font-size:10px;font-weight:800;margin-bottom:3px}.unified-row:focus-within{background:#f5ede3}.unified-row:hover{background:#faf5ef}
+.status-jump{width:100%;font:inherit;cursor:pointer;text-align:left}.status-jump:hover,.status-jump[aria-pressed=true]{border-color:#a28c75;background:#ece1d4}.side-card h2{font-size:17px}.side-card .focus-note{font-size:12px}
+.drawer-panel{scroll-padding-top:85px}.drawer-head{z-index:5}.drawer-head h2{font-size:21px}.ui-detail-hero{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:16px 0}.ui-detail-hero>strong{font-size:21px}.ui-detail-hero>span{font-size:14px}.ui-care-banner{background:#f4e5d4;border-left:3px solid #b98754;border-radius:10px;padding:13px 15px;margin:12px 0}.ui-care-banner strong{font-size:12px;color:#785436}.ui-care-banner p{margin:6px 0 0;line-height:1.7;font-size:14px}.ui-detail-nav{position:sticky;top:0;display:flex;gap:8px;padding:10px 0;background:#f1e8def5;z-index:3;border-bottom:1px solid var(--line)}.ui-detail-nav .btn{min-height:36px;font-size:12px}.unified-detail-section{scroll-margin-top:75px}.unified-actions{scroll-margin-top:70px}.ui-save-footer{position:sticky;bottom:-1px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fffcf8ed;border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:0 -8px 24px #3f332b0a;z-index:4}.ui-save-footer>span{font-size:11px;color:var(--muted)}.unified-detail-links .btn,.quick-links a{border-radius:12px;min-height:42px}
+.ui-profile-hero{padding:18px;background:#f7eee3;border:1px solid var(--line);border-radius:16px;margin:14px 0}.ui-profile-hero>strong{font-size:21px}.ui-profile-hero>p{margin:7px 0;font-size:13px}.ui-profile-hero>small{font-size:10px;color:var(--muted);overflow-wrap:anywhere}.ui-profile-hero .cp-actions{justify-content:space-between;margin:16px 0 0}.ui-profile-hero h3{margin:0;font-size:16px}.ui-profile-hero .btn{min-height:42px}.ui-owner-fold>summary{cursor:pointer;font-weight:700;font-size:14px;min-height:30px}.ui-owner-fold[open]>summary{margin-bottom:18px}.ui-check{display:flex;align-items:center;gap:9px;margin:18px 0;font-size:12px}.ui-check input[type=checkbox]{width:18px;min-height:18px;height:18px;flex:0 0 auto}.ui-pet-card .btn{margin-top:15px}.ui-pet-card>small{display:block}.ui-pet-saved{border-color:#77866a;box-shadow:0 0 0 2px #77866a3b;background:#f4f6ef}.ui-sheet-link{font-size:12px}.cp-fields{min-width:0}#cp-view>.cp-toolbar{gap:8px}#cp-view h3{font-size:16px}.cp-fields input[type=checkbox]{width:18px;min-height:18px}.cp-box summary{font-size:14px}.cp-box .cp-fields{margin-top:14px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:760px){
+ .topbar-inner{min-height:60px;gap:8px}.brand strong{font-size:12px}.brand span,.admin-name{display:none}.brand img{width:36px;height:36px}.top-actions{gap:7px}.top-actions #logout-button{font-size:11px;padding-left:9px;padding-right:2px}.top-actions .form-menu summary{font-size:11px;min-height:36px;padding:7px 9px;gap:5px}.form-menu svg{width:14px;height:14px}
+ main{padding-top:15px}.page-head h1{font-size:21px}.page-head{margin-bottom:12px}#cp-nav{margin-bottom:14px}#cp-nav .btn{padding:8px 13px;min-height:38px}.unified-console>.surface{padding:15px}.unified-head{display:flex;margin-bottom:9px}.unified-head h2{font-size:17px}.unified-head #unified-badge{display:none}
+ .unified-metrics{gap:7px;margin-bottom:12px;grid-template-columns:repeat(4,minmax(0,1fr))}.unified-metric{padding:10px 8px}.unified-metric span{font-size:11px}.unified-metric strong{font-size:25px}.unified-metric small{display:none}.service-overview{width:100%;display:flex;gap:3px;overflow-x:auto}.service-card{flex:1;justify-content:center;gap:5px;padding:8px!important;white-space:nowrap}.service-card strong{font-size:12px}.service-card .ui-service-count{padding:1px 4px}
+ .unified-filters{grid-template-columns:minmax(0,1fr) auto;gap:7px}.unified-filters .btn{padding:9px 11px;font-size:12px;min-height:44px}.unified-filters label{display:none}.unified-filters input{font-size:13px}.ui-filter-bar{margin-top:8px}.result-meta{display:block;margin-bottom:10px}.result-meta>span{display:block}
+ #unified-mobile-cases .case-card{display:block;width:100%;border-radius:14px;padding:15px;text-align:left;background:#fffcf8;margin-bottom:9px}#unified-mobile-cases .case-card>strong{font-size:17px;margin:8px 0 5px}.case-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}.ui-pet-names{display:block;font-size:13px;color:var(--ink)}#unified-mobile-cases small{font-size:10px;color:var(--muted);margin-top:8px}.ui-mobile-alert,.ui-mobile-note{display:block;padding:9px 10px;border-radius:9px;margin-top:10px;font-size:12px;line-height:1.6;white-space:normal}.ui-mobile-alert{background:#f6ebe0;color:#755133}.ui-mobile-note{background:#eef1e9;color:#59624d}.ui-mobile-alert b,.ui-mobile-note b{display:block;font-size:10px;margin-bottom:2px}.ui-card-link{display:block;text-align:right;font-size:12px;font-weight:700;margin-top:10px}
+ .drawer-panel{padding:18px 15px;scroll-padding-top:85px}.drawer-head h2{font-size:18px}.ui-detail-hero>strong{font-size:19px}.ui-detail-hero>span{font-size:13px}.ui-profile-hero{padding:15px}.ui-profile-hero .cp-actions{gap:9px}.ui-save-footer{padding:10px}.ui-save-footer>span{display:none}.ui-save-footer .btn{width:100%}.cp-fields{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){.btn,.unified-metric{transition:none}}
+#cp-nav .btn[aria-pressed=true]{background:var(--cocoa);color:#fff}
+.service-card strong{margin:0}.service-card span{color:inherit}
+#unified-badge[data-state=ready]{display:none}
+.status[data-status="待確認"]{--tone-bg:#f2e4d3;--tone-text:#805e38}
+.service-tag{display:inline-flex;padding:4px 8px;border-radius:7px;background:#eee5dc;font-weight:700;font-size:11px;white-space:nowrap}
+.btn.ghost:hover:not(:disabled){background:#eae0d4;color:var(--cocoa-deep)}
+.status[data-status="已做完"]{--tone-bg:#e2e7e9;--tone-text:#526771}
+@media(max-width:760px){.drawer-head{margin-left:-15px;margin-right:-15px;padding-left:15px;padding-right:15px}}
+
 </style>
 </head>
 <body>
@@ -728,13 +769,13 @@
         <div class="brand">
           <img src="nico-nico-pet-house-logo.png" alt="" />
           <div>
-            <strong>NicoPark Console</strong>
+            <strong>NicoPark 店家後台</strong>
             <span>尼口尼口寵物精緻美容旅館</span>
           </div>
         </div>
         <div class="top-actions">
           <span class="admin-name" id="admin-name"></span>
-          <a class="btn ghost" href="index.html" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">查看前台</a>
+          <details class="form-menu" id="public-form-menu"><summary class="btn secondary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v7M21 3l-9 9M10 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/></svg><span>客人填寫表單</span><span aria-hidden="true">⌄</span></summary><nav aria-label="客人填寫表單"><a href="https://ruyuan.niconicopet.com/" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">入園登記 <span>↗</span></a><a href="https://ruguan.niconicopet.com/" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">入館登記 <span>↗</span></a><a href="https://qisu.niconicopet.com/" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">寄宿契約 <span>↗</span></a></nav></details>
           <button class="btn ghost" type="button" id="logout-button">登出</button>
         </div>
       </div>
@@ -743,8 +784,7 @@
     <main>
       <div class="page-head">
         <div>
-          <p class="eyebrow">today at nicopark</p>
-          <h1>店家管理中心</h1>
+          <h1>案件與客戶</h1>
           <div class="sync-line">
             <span class="live-badge" id="live-badge" data-state="loading">Google 試算表連動中</span>
             <p id="last-sync">尚未同步</p>
@@ -754,13 +794,12 @@
       </div>
 
       
-      <nav id="cp-nav" class="cp-toolbar" aria-label="管理區域"><button type="button" class="btn secondary" id="cp-nav-cases" aria-pressed="true">案件管理</button><button type="button" class="btn secondary" id="cp-nav-profiles" aria-pressed="false">客戶與毛孩</button></nav>
+      <nav id="cp-nav" class="cp-toolbar" aria-label="管理區域"><button type="button" class="btn secondary" id="cp-nav-cases" aria-pressed="true">案件管理</button><button type="button" class="btn secondary" id="cp-nav-profiles" aria-pressed="false">客戶／毛孩名冊</button></nav>
 <div id="cp-case-view"><section class="unified-console" aria-labelledby="unified-title">
         <div class="surface">
           <div class="unified-head">
             <div>
-              <p class="eyebrow">store command center</p>
-              <h2 id="unified-title">三站統一管理</h2>
+              <h2 id="unified-title">案件總覽</h2>
             </div>
             <span class="live-badge" id="unified-badge" data-state="loading">三站資料載入中</span>
           </div>
@@ -768,18 +807,18 @@
             <strong id="unified-metric-scope" aria-live="polite">統計範圍：全部服務</strong>
           </div>
           <div class="unified-metrics" id="unified-metrics" aria-label="全部服務案件統計">
-            <article class="unified-metric"><span>今日新增</span><strong id="unified-today">—</strong></article>
-            <article class="unified-metric"><span>待處理</span><strong id="unified-pending">—</strong></article>
-            <article class="unified-metric"><span>特殊提醒</span><strong id="unified-attention">—</strong></article>
-            <article class="unified-metric"><span>全部案件</span><strong id="unified-total">—</strong></article>
+            <button type="button" class="unified-metric metric-priority" data-ui-filter="pending" aria-pressed="false"><span>待處理</span><strong id="unified-pending">—</strong><small>優先處理 <span aria-hidden="true">↗</span></small></button>
+            <button type="button" class="unified-metric" data-ui-filter="today" aria-pressed="false"><span>今日新增</span><strong id="unified-today">—</strong><small>查看今天送出 <span aria-hidden="true">↗</span></small></button>
+            <button type="button" class="unified-metric" data-ui-filter="attention" aria-pressed="false"><span>照護提醒</span><strong id="unified-attention">—</strong><small>查看需留意案件 <span aria-hidden="true">↗</span></small></button>
+            <button type="button" class="unified-metric" data-ui-filter="" aria-pressed="false"><span>全部案件</span><strong id="unified-total">—</strong><small>查看全部 <span aria-hidden="true">↗</span></small></button>
           </div>
-          <div class="service-overview" id="unified-services"></div>
+          <nav class="service-overview" id="unified-services" aria-label="服務切換"></nav>
           <form class="unified-filters" id="unified-filter-form">
             <div class="field">
               <label for="unified-query">搜尋案件</label>
-              <input id="unified-query" type="search" placeholder="輸入即可搜尋；英文不分大小寫" />
+              <input id="unified-query" type="search" placeholder="搜尋飼主、毛孩、電話或案件編號" />
             </div>
-            <div class="field">
+            <div class="field ui-service-fallback" hidden>
               <label for="unified-service">服務別</label>
               <select id="unified-service">
                 <option value="all">全部服務</option>
@@ -788,12 +827,13 @@
                 <option value="qisu">寄宿</option>
               </select>
             </div>
-            <button class="btn secondary" type="submit">套用篩選</button>
+            <button class="btn secondary" type="submit">更新清單</button>
           </form>
+          <div class="ui-filter-bar"><span id="ui-filter-label" role="status" aria-live="polite">全部案件</span><button class="btn ghost" id="ui-clear-filter" type="button" hidden>清除快速篩選 ×</button></div>
           <p class="result-meta" aria-live="polite"><span id="unified-result-count">載入中…</span><span id="unified-result-note"></span></p>
           <div class="table-wrap unified-table">
             <table>
-              <thead><tr><th>服務</th><th>送出時間</th><th>案件</th><th>飼主／毛孩</th><th>狀態</th><th>特殊提醒／店員備註</th></tr></thead>
+              <thead><tr><th>服務</th><th>飼主／毛孩</th><th>送出時間</th><th>狀態</th><th>照護提醒／店員備註</th><th><span class="sr-only">操作</span></th></tr></thead>
               <tbody id="unified-tbody"></tbody>
             </table>
             <p class="unified-empty" id="unified-empty" hidden>目前沒有符合條件的案件。</p>
@@ -875,7 +915,7 @@
           </section>
           <section class="surface side-card">
             <h2>案件處理方式</h2>
-            <p class="surface-lede">所有案件搜尋已集中在頁面最上方，避免重複查詢與畫面跳動。</p>
+            
             <ol class="operation-list">
               <li><strong>1．搜尋</strong>　輸入飼主、電話、毛孩或案件編號；英文不分大小寫。</li>
               <li><strong>2．查看</strong>　點選案件，即可開啟三站完整表單、PDF 與特殊提醒。</li>
@@ -890,13 +930,13 @@
               <a id="sheet-link" href="#" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">開啟入園 Google 試算表 ↗</a>
               <a id="ruguan-sheet-link" href="#" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" hidden>開啟入館 Google 試算表 ↗</a>
               <a id="qisu-sheet-link" href="#" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" hidden>開啟寄宿 Google 試算表 ↗</a>
-              <a href="index.html" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">開啟客人填寫頁 ↗</a>
+              <a href="#public-form-menu" id="ui-forms-shortcut">客人填寫表單 ↗</a>
             </div>
           </section>
         </aside>
       </div>
 </div><section id="cp-view" hidden class="surface" aria-labelledby="cp-title">
-<h2 id="cp-title">客戶與毛孩</h2><p class="cp-note">三站共用的目前名冊。新增毛孩不必重填整張表單，不會建立假案件；歷史案件與 PDF 保留當時版本。</p>
+<h2 id="cp-title">客戶／毛孩名冊</h2>
 <div class="cp-toolbar"><input class="cp-search" style="max-width:600px" id="cp-query" aria-label="搜尋客戶或未連結案件" placeholder="姓名、手機、信箱、毛孩或案件編號"><button class="btn secondary" type="button" id="cp-search">搜尋／更新</button><button class="btn" type="button" id="cp-new">＋ 新增客戶</button></div>
 <p id="cp-message" role="status" aria-live="polite"></p><h3 id="cp-roster-count">客戶檔案</h3><div class="cp-grid" id="cp-roster"></div><h3 id="cp-unlinked-count">未連結歷史案件</h3><p class="cp-note">首次使用請先搜尋既有客人，從其中一份案件建立檔案，再將其他案件逐一連結。同名或同電話不會自動合併。</p><div class="cp-grid" id="cp-unlinked"></div></section>
     </main>
@@ -907,7 +947,6 @@
     <div class="drawer-panel">
       <header class="drawer-head">
         <div>
-          <p class="eyebrow">unified case detail</p>
           <h2 id="unified-drawer-title">三站案件資料</h2>
           <p id="unified-drawer-subtitle"></p>
         </div>
@@ -1075,6 +1114,7 @@
     }
 
     function showLogin(message) {
+      uiCaseFilter = ""; $("#public-form-menu").open = false;
       ++cpRequest; ++cpWriteSequence; ++unifiedDetailRequest; ++caseDetailRequest;
       ++caseListRequestSequence; ++unifiedSearchRequestSequence; ++customerSearchRequestSequence;
       cpCurrent = null; cpBusy = false; cpOperations.clear(); unifiedData = null;
@@ -1127,15 +1167,9 @@
       }).format(date);
     }
 
-    function updateSyncText() {
-      if (!lastSyncAt) {
-        $("#last-sync").textContent = "尚未同步";
-        return;
-      }
-      const seconds = Math.max(0, Math.ceil((nextRefreshAt - Date.now()) / 1000));
-      $("#last-sync").textContent =
-        "最後同步 " + syncClock(lastSyncAt) + " · " + seconds + " 秒後自動更新";
-    }
+    function updateSyncText(){
+  $('#last-sync').textContent=lastSyncAt?'更新於 '+syncClock(lastSyncAt).slice(0,5):'尚未同步';
+}
 
     function stopAutoRefresh() {
       clearInterval(autoRefreshTimer);
@@ -1306,19 +1340,12 @@
       return data;
     }
 
-    function renderStatusOverview(counts, service) {
-      const host = $("#status-overview"); host.replaceChildren();
-      $("#progress-scope").textContent = unifiedServiceLabel(service || value("unified-service"));
-      const normalized = {};
-      Object.entries(counts).forEach(([name, count]) => { const key = name === "已做完" ? "已完成" : name; normalized[key] = (normalized[key] || 0) + Number(count || 0); });
-      const statuses = Array.from(new Set(["待確認", "待審核", "待聯繫", "已確認", "已完成", "已取消", ...Object.keys(normalized)]));
-      statuses.forEach(name => {
-        const item = document.createElement("div"); item.className = "status-jump";
-        const label = document.createElement("span"); label.textContent = statusLabel(name);
-        const count = document.createElement("strong"); count.textContent = Number(normalized[name] || 0);
-        item.append(label, count); host.appendChild(item);
-      });
-    }
+    function renderStatusOverview(counts,service){
+  const host=$('#status-overview');host.replaceChildren();$('#progress-scope').textContent=unifiedServiceLabel(service||value('unified-service'));
+  const normalized={};Object.entries(counts).forEach(([name,count])=>{const key=name==='已做完'?'已完成':name;normalized[key]=(normalized[key]||0)+Number(count||0);});
+  const statuses=Array.from(new Set(['待確認','待審核','待聯繫','已確認','已完成','已取消',...Object.keys(normalized)]));
+  statuses.forEach(name=>{const b=cpNode('button',null,'status-jump');b.type='button';b.dataset.status=name;b.setAttribute('aria-pressed',String(uiCaseFilter==='status:'+name));b.append(cpNode('span',statusLabel(name)),cpNode('strong',Number(normalized[name]||0)));b.addEventListener('click',()=>uiChooseFilter('status:'+name));host.append(b);});
+}
 
     async function loadDashboard() {
       const data = await auth("adminDashboard");
@@ -1416,32 +1443,19 @@
         : selectedServiceLabel + "資料已更新";
       setUnifiedState("ready", selectedServiceLabel + "資料已更新");
       renderUnifiedServices(data.services || []);
-      renderUnifiedCases(data.cases || []);
+      renderUnifiedCases(uiFilteredCases(data.cases || []));
+      uiUpdateFilter(data);
       if (updateSwitchableList && selectedCaseService() !== "ruyuan") renderSwitchableUnifiedCases(data.cases || []);
     }
 
-    function renderUnifiedServices(services) {
-      const host = $("#unified-services");
-      host.replaceChildren();
-      services.forEach((service) => {
-        const card = document.createElement("button");
-        card.type = "button";
-        card.className = "service-card" + (value("unified-service") === service.key ? " is-selected" : "");
-        card.setAttribute("aria-pressed", String(value("unified-service") === service.key));
-        const title = document.createElement("strong");
-        title.textContent = service.label;
-        const stats = document.createElement("span");
-        stats.textContent = "今日 " + unifiedText(service.today) + " · 待處理 " + unifiedText(service.pending) + " · 特殊提醒 " + unifiedText(service.attention);
-        const total = document.createElement("span");
-        total.textContent = "共 " + unifiedText(service.total) + " 筆案件";
-        card.append(title, stats, total);
-        card.addEventListener("click", () => {
-          $("#unified-service").value = service.key;
-          $("#unified-filter-form").dispatchEvent(new Event("submit", { cancelable: true }));
-        });
-        host.appendChild(card);
-      });
-    }
+    function renderUnifiedServices(services){
+  const host=$('#unified-services');host.replaceChildren();
+  const total=services.reduce((n,s)=>n+Number(s.total||0),0);
+  [{key:'all',label:'全部',total},...services].forEach(service=>{
+    const b=cpNode('button',null,'service-card');b.type='button';b.dataset.service=service.key;b.setAttribute('aria-pressed',String(value('unified-service')===service.key));
+    b.append(cpNode('strong',service.label),cpNode('span',String(service.total||0),'ui-service-count'));b.addEventListener('click',()=>uiSelectService(service.key));host.append(b);
+  });
+}
 
     function unifiedCaseButton(caseData, compact) {
       const button = document.createElement(compact ? "button" : "tr");
@@ -1472,55 +1486,29 @@
       return notices;
     }
 
-    function unifiedNoticeCell(caseData) {
-      const td = document.createElement("td");
-      const notices = unifiedNoticeText(caseData);
-      if (!notices.length) { td.textContent = "—"; return td; }
-      notices.forEach((notice, index) => {
-        const line = document.createElement("span");
-        line.className = index === 0 && caseData.specialAlert ? "unified-alert" : "unified-note";
-        line.textContent = notice;
-        td.appendChild(line);
-      });
-      return td;
-    }
+    function unifiedNoticeCell(caseData){
+  const td=cpNode('td');
+  if(caseData.specialAlert){const alert=cpNode('span',null,'unified-alert');alert.append(cpNode('small','照護提醒'),cpNode('span',caseData.specialAlert));td.append(alert);}
+  if(caseData.note){const note=cpNode('span',null,'unified-note');note.append(cpNode('small','店員備註'),cpNode('span',caseData.note));td.append(note);}
+  if(!td.childNodes.length)td.textContent='—';return td;
+}
 
-    function renderUnifiedCases(cases) {
-      const tbody = $("#unified-tbody");
-      const mobile = $("#unified-mobile-cases");
-      const empty = $("#unified-empty");
-      tbody.replaceChildren();
-      mobile.replaceChildren();
-      empty.hidden = cases.length !== 0;
-      cases.forEach((caseData) => {
-        const row = unifiedCaseButton(caseData, false);
-        const tag = document.createElement("span");
-        tag.className = "service-tag";
-        tag.textContent = unifiedText(caseData.serviceLabel);
-        const serviceTd = document.createElement("td");
-        serviceTd.appendChild(tag);
-        row.append(
-          serviceTd,
-          unifiedCell(caseData.submittedAt),
-          unifiedCell(caseData.caseId),
-          unifiedCell(unifiedText(caseData.ownerName) + "／" + (caseData.petNames || []).join("、") + (caseData.petCount ? "（共 " + caseData.petCount + " 隻）" : "")),
-          unifiedCell(statusLabel(caseData.status)),
-          unifiedNoticeCell(caseData)
-        );
-        tbody.appendChild(row);
-
-        const card = unifiedCaseButton(caseData, true);
-        const title = document.createElement("strong");
-        title.textContent = unifiedText(caseData.serviceLabel) + " · " + unifiedText(caseData.ownerName) + "／" + (caseData.petNames || []).join("、") + (caseData.petCount ? "（共 " + caseData.petCount + " 隻）" : "");
-        const line1 = document.createElement("span");
-        line1.textContent = unifiedText(caseData.caseId) + " · " + statusLabel(caseData.status);
-        const line2 = document.createElement("span");
-        const notices = unifiedNoticeText(caseData);
-        line2.textContent = notices.length ? notices.join("　") : "無特殊提醒／店員備註";
-        card.append(title, line1, line2);
-        mobile.appendChild(card);
-      });
-    }
+    function renderUnifiedCases(cases){
+  const tbody=$('#unified-tbody'),mobile=$('#unified-mobile-cases'),empty=$('#unified-empty');tbody.replaceChildren();mobile.replaceChildren();empty.hidden=cases.length!==0;
+  if(!cases.length)mobile.append(cpNode('p','目前沒有符合條件的案件。','unified-empty'));
+  cases.forEach(c=>{
+    const serviceLabel=c.serviceLabel||unifiedServiceLabel(c.service);
+    const row=unifiedCaseButton(c,false);const tag=cpNode('span',serviceLabel,'service-tag');const service=cpNode('td');service.append(tag);
+    const identity=cpNode('td',null,'ui-case-identity');identity.append(cpNode('strong',c.ownerName||'未填飼主'),cpNode('span',(c.petNames||[]).join('、')+(c.petCount?' · 共 '+c.petCount+' 隻':'')),cpNode('small',c.caseId));
+    const status=cpNode('td');status.append(statusBadge(c.status));const action=cpNode('td');const open=cpButton('查看詳情',e=>openUnifiedCase(c.service,c.caseId));open.classList.add('ui-detail-open');open.addEventListener('click',e=>e.stopPropagation());action.append(open);
+    row.append(service,identity,unifiedCell(c.submittedAt,'ui-case-time'),status,unifiedNoticeCell(c),action);tbody.append(row);
+    const card=unifiedCaseButton(c,true);const top=cpNode('span',null,'case-card-top');top.append(cpNode('span',serviceLabel,'service-tag'),statusBadge(c.status));
+    card.append(top,cpNode('strong',c.ownerName||'未填飼主'),cpNode('span',(c.petNames||[]).join('、')+(c.petCount?' · 共 '+c.petCount+' 隻':''),'ui-pet-names'),cpNode('small',c.caseId+' · '+c.submittedAt));
+    if(c.specialAlert){const note=cpNode('span',null,'ui-mobile-alert');note.append(cpNode('b','照護提醒'),cpNode('span',c.specialAlert));card.append(note);}
+    if(c.note){const note=cpNode('span',null,'ui-mobile-note');note.append(cpNode('b','店員備註'),cpNode('span',c.note));card.append(note);}
+    card.append(cpNode('span','查看詳情 →','ui-card-link'));mobile.append(card);
+  });
+}
 
     async function openUnifiedCase(service, caseId) {
       const request = ++unifiedDetailRequest;
@@ -1699,8 +1687,8 @@
       const target = identity || { service: caseData.service || unifiedSelectedService, caseId: caseData.caseId, request: unifiedDetailRequest };
       const isCurrent = () => !!token && !$("#unified-drawer").hidden && target.request === unifiedDetailRequest &&
         target.service === unifiedSelectedService && target.caseId === unifiedSelectedCaseId;
-      $("#unified-drawer-title").textContent = unifiedText(caseData.serviceLabel) + "｜" + unifiedText(caseData.caseId);
-      $("#unified-drawer-subtitle").textContent = "原始資料仍保存在「" + unifiedText(caseData.serviceLabel) + "」的獨立試算表。";
+      $("#unified-drawer-title").textContent = unifiedText(caseData.serviceLabel || unifiedServiceLabel(target.service)) + "｜" + unifiedText(caseData.caseId);
+      $("#unified-drawer-subtitle").textContent = unifiedServiceLabel(target.service) + "案件 · 當時填寫資料";
       const host = $("#unified-drawer-content");
       host.replaceChildren();
       const grid = document.createElement("div");
@@ -1799,6 +1787,7 @@
         }
       });
       host.appendChild(actions);
+      uiEnhanceDetail(host, caseData, actions);
     }
 
     function closeUnifiedDrawer() {
@@ -2414,25 +2403,25 @@ async function cpOpen(id){
 }
 function cpRender(data){
   cpCurrent=data;const c=data.customer;const root=cpDrawer(c.owner.name+'｜客戶與毛孩');
-  root.append(cpNode('p','客戶編號：'+c.id,'cp-note'),cpNode('p','這裡是目前的客戶與毛孩名冊，不是舊契約。店員修改後須由飼主於下次填表確認；不會改寫舊案件或舊 PDF。','cp-note'));
+  const hero=cpNode('section',null,'ui-profile-hero');hero.append(cpNode('strong',c.owner.name),cpNode('p',[c.owner.phone,c.owner.email].filter(Boolean).join(' · ')),cpNode('small','客戶編號：'+c.id));
+  const actions=cpNode('div',null,'cp-actions');actions.append(cpNode('h3','名下毛孩 '+data.pets.length+' 隻'),cpButton('＋ 新增毛孩',()=>cpPetEditor(data,null),false));hero.append(actions);root.append(hero);
   if(data.projectionReady===false)root.append(cpNode('p','客戶檔案已保存，但試算表名冊尚未同步。請勿重複建檔，請聯絡管理員核對名冊工作表。','cp-warning'));
   if(data.candidates?.length)root.append(cpNode('p','有相同聯絡方式的其他檔案，請核對：'+data.candidates.map(x=>x.name+' '+x.id).join('；'),'cp-warning'));
-  const ownerBox=cpNode('section',null,'cp-box');ownerBox.append(cpNode('h3','飼主資料'));const ownerRead=cpFields(ownerBox,CP_OWNER_FIELDS,c.owner);
-  const separate=document.createElement('input');separate.type='checkbox';const separateLabel=cpNode('label');separateLabel.append(separate,document.createTextNode(' 若聯絡方式與他人相同，我已確認仍為不同客戶（不合併）'));ownerBox.append(separateLabel);
+  const ownerBox=cpNode('details',null,'cp-box ui-owner-fold');ownerBox.append(cpNode('summary','飼主資料｜查看／修改'));const ownerRead=cpFields(ownerBox,CP_OWNER_FIELDS,c.owner);
+  const separate=document.createElement('input');separate.type='checkbox';const separateLabel=cpNode('label',null,'ui-check');separateLabel.append(separate,document.createTextNode('若聯絡方式與他人相同，我已確認仍為不同客戶（不合併）'));ownerBox.append(separateLabel);
   ownerBox.append(cpButton('儲存飼主資料',()=>cpWrite('adminProfilesSaveOwner',{customerId:c.id,revision:c.revision,owner:ownerRead(),confirmSeparate:separate.checked},cpRender),false));root.append(ownerBox);
-  const actions=cpNode('div',null,'cp-actions');actions.append(cpButton('＋ 新增毛孩',()=>cpPetEditor(data,null),false));
-  const sheetUrl=trustedAdminLink(data.sheetUrl);if(sheetUrl){const a=cpNode('a','開啟客戶／毛孩試算表 ↗','btn secondary');a.href=sheetUrl;a.target='_blank';a.rel='noopener noreferrer';actions.append(a);}root.append(cpNode('h3','名下毛孩 '+data.pets.length+' 隻'),cpNode('p','名冊不限五隻；每次服務表單最多選五隻。相同名字也會保留不同毛孩編號。','cp-note'),actions);
-  data.pets.forEach(p=>{const box=cpNode('article',null,'cp-box');box.append(cpNode('h3',(p.general.name||'未命名')+'｜'+(p.general.species||'待補貓／狗')),cpNode('p',p.id,'cp-note'),cpNode('p',(p.general.breed||'品種待補')+' · '+p.confirmation+' · '+p.source),cpButton('查看／編輯毛孩資料',()=>cpPetEditor(data,p)));root.append(box);});
-  const history=cpNode('section',null,'cp-box');history.append(cpNode('h3','已連結案件（當時資料與原 PDF）'));
-  data.links.forEach(link=>history.append(cpButton(CP_SERVICE_LABELS[link.service]+' '+link.caseId,()=>{cpClose();openUnifiedCase(link.service,link.caseId);})));if(!data.links.length)history.append(cpNode('p','尚未連結服務案件。'));root.append(history);
-  root.append(cpNode('p','要把另一份案件歸到此客人：關閉此視窗，在「未連結歷史案件」搜尋案件，按建立或連結，再選擇本客戶編號。','cp-note'));
+  const sheetUrl=trustedAdminLink(data.sheetUrl);if(sheetUrl){const a=cpNode('a','客戶／毛孩試算表 ↗','btn secondary ui-sheet-link');a.href=sheetUrl;a.target='_blank';a.rel='noopener noreferrer';root.append(a);}
+  root.append(cpNode('p','名冊不限五隻，每次服務最多選五隻。店員補登資料由飼主下次確認，舊案件與 PDF 不變。','cp-note'));
+  data.pets.forEach(p=>{const box=cpNode('article',null,'cp-box ui-pet-card');box.dataset.petId=p.id;box.append(cpNode('h3',(p.general.name||'未命名')+'｜'+(p.general.species||'待補貓／狗')),cpNode('p',(p.general.breed||'品種待補')+' · '+p.confirmation+' · '+p.source),cpNode('small',p.id,'cp-note'),cpButton('查看／編輯毛孩資料',()=>cpPetEditor(data,p)));root.append(box);});
+  const history=cpNode('section',null,'cp-box');history.append(cpNode('h3','已連結案件（當時資料與原 PDF）'));data.links.forEach(link=>history.append(cpButton(CP_SERVICE_LABELS[link.service]+' '+link.caseId,()=>{cpClose();openUnifiedCase(link.service,link.caseId);})));if(!data.links.length)history.append(cpNode('p','尚未連結服務案件。'));root.append(history);
+  root.append(cpNode('p','連結另一份歷史案件：回到名冊搜尋案件，按「建立或連結客戶檔案」，選擇本客戶編號並逐隻核對。','cp-note'));
 }
 function cpPetEditor(data,pet){
   const root=cpDrawer(pet?'編輯 '+pet.general.name:'新增毛孩');
   root.append(cpButton('← 返回客戶檔案',()=>cpRender(data)),cpNode('p','僅名字和貓／狗必填；其餘可先留空，下次由飼主補齊。此操作只更新名冊，不新增服務案件、不寄信。','cp-note'));
   const box=cpNode('section',null,'cp-box');box.append(cpNode('h3','基本資料'));const general=cpFields(box,CP_GENERAL_FIELDS,pet?.general||{});root.append(box);
   const readers={};Object.keys(CP_SERVICE_FIELDS).forEach(site=>{const section=cpNode('section',null,'cp-box');const fold=cpNode('details');fold.append(cpNode('summary',CP_SERVICE_LABELS[site]+'習慣與照護資料'));readers[site]=cpFields(fold,CP_SERVICE_FIELDS[site],pet?.services?.[site]||{});section.append(fold);root.append(section);});
-  root.append(cpNode('p','近期健康、發情、驅蟲日期、疫苗證明上傳與契約同意，仍須客人每次重新確認；這裡保留的連結僅供店員查閱。','cp-note'),cpButton('儲存毛孩（待飼主確認）',()=>cpWrite('adminProfilesSavePet',{customerId:data.customer.id,pet:{id:pet?.id||'',revision:pet?.revision,general:general(),services:Object.fromEntries(Object.entries(readers).map(([site,read])=>[site,read()]))}},cpRender),false));
+  root.append(cpNode('p','近期健康、發情、驅蟲日期、疫苗證明上傳與契約同意，仍須客人每次重新確認；這裡保留的連結僅供店員查閱。','cp-note'),cpButton('儲存毛孩（待飼主確認）',()=>cpWrite('adminProfilesSavePet',{customerId:data.customer.id,pet:{id:pet?.id||'',revision:pet?.revision,general:general(),services:Object.fromEntries(Object.entries(readers).map(([site,read])=>[site,read()]))}},saved=>uiPetSaved(saved,data,pet)),false));
 }
 function cpCreateBlank(){const root=cpDrawer('新增客戶檔案');root.append(cpNode('p','優先從既有案件建立，避免重複。這裡不會產生任何服務案件或 PDF。','cp-note'));const owner=cpFields(root,CP_OWNER_FIELDS);const confirm=document.createElement('input');confirm.type='checkbox';const label=cpNode('label');label.append(confirm,document.createTextNode(' 若電話／信箱已存在，我已確認是不同客戶，不要合併。'));root.append(label,cpButton('建立客戶',()=>cpWrite('adminProfilesCreate',{owner:owner(),confirmSeparate:confirm.checked},cpRender),false));}
 async function cpSource(service,caseId){
@@ -2472,6 +2461,68 @@ document.getElementById('cp-new').addEventListener('click',cpCreateBlank);
 document.getElementById('cp-drawer-close').addEventListener('click',cpClose);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('cp-drawer').hidden)cpClose();});
 
+// UI-only enhancements. No new backend actions, storage or customer data changes.
+let uiCaseFilter = '';
+function uiToday() { return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()); }
+function uiFilteredCases(cases) {
+  return cases.filter(c=>{
+    if(uiCaseFilter==='pending')return ['待確認','待審核','待聯繫'].includes(c.status);
+    if(uiCaseFilter==='today')return String(c.submittedAt||'').slice(0,10)===uiToday();
+    if(uiCaseFilter==='attention')return !!c.specialAlert;
+    if(uiCaseFilter.startsWith('status:'))return (c.status==='已做完'?'已完成':c.status)===uiCaseFilter.slice(7);
+    return true;
+  });
+}
+function uiFilterName(){return {pending:'待處理',today:'今日新增',attention:'照護提醒','':'全部案件'}[uiCaseFilter]||statusLabel(uiCaseFilter.slice(7));}
+function uiUpdateFilter(data){
+  const count=uiFilteredCases(data.cases||[]).length;
+  $('#ui-filter-label').textContent=uiFilterName();$('#ui-clear-filter').hidden=!uiCaseFilter;
+  $('#unified-result-count').textContent=uiCaseFilter?'顯示 '+count+' 筆'+uiFilterName()+'案件':'顯示 '+count+'／'+Number(data.totalMatched||0)+' 筆案件';
+  $('#unified-result-note').textContent=data.truncated?'目前僅載入最新 200 筆；快速篩選只涵蓋已載入案件，請用搜尋縮小範圍。':'';
+  document.querySelectorAll('[data-ui-filter]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.uiFilter===uiCaseFilter)));
+  document.querySelectorAll('#status-overview [data-status]').forEach(b=>b.setAttribute('aria-pressed',String(uiCaseFilter==='status:'+b.dataset.status)));
+}
+function uiChooseFilter(filter){
+  uiCaseFilter=filter;
+  if(!unifiedData)return;
+  renderUnifiedCases(uiFilteredCases(unifiedData.cases||[]));uiUpdateFilter(unifiedData);
+  $('#unified-result-count').scrollIntoView?.({block:'nearest',behavior:'smooth'});
+}
+function uiSelectService(service){
+  $('#unified-service').value=service;
+  document.querySelectorAll('#unified-services button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.service===service)));
+  $('#unified-filter-form').dispatchEvent(new Event('submit',{cancelable:true}));
+}
+function uiInit(){
+  document.querySelectorAll('[data-ui-filter]').forEach(b=>b.addEventListener('click',()=>uiChooseFilter(b.dataset.uiFilter)));
+  $('#ui-clear-filter').addEventListener('click',()=>uiChooseFilter(''));
+  $('#ui-forms-shortcut').addEventListener('click',e=>{e.preventDefault();$('#public-form-menu').open=true;$('#public-form-menu summary').focus();});
+  document.addEventListener('click',e=>{if(!$('#public-form-menu').contains(e.target))$('#public-form-menu').open=false;});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#public-form-menu').open){$('#public-form-menu').open=false;$('#public-form-menu summary').focus();}});
+  $('#public-form-menu').addEventListener('focusout',e=>{if(e.relatedTarget&&!$('#public-form-menu').contains(e.relatedTarget))$('#public-form-menu').open=false;});
+  $('#public-form-menu nav').addEventListener('click',e=>{if(e.target.closest('a'))$('#public-form-menu').open=false;});
+  document.defaultView?.addEventListener('resize',uiUpdateDetailNav);
+}
+function uiUpdateDetailNav(){const nav=document.querySelector('.ui-detail-nav');if(!nav)return;const header=document.querySelector('#unified-drawer .drawer-head');const height=header?.getBoundingClientRect?.().height||80;nav.style.top=Math.ceil(height)+'px';}
+function uiEnhanceDetail(host,caseData,actions){
+  const hero=cpNode('div',null,'ui-detail-hero');hero.append(cpNode('strong',caseData.ownerName||'未填飼主'),cpNode('span',(caseData.petNames||[]).join('、')+(caseData.petCount?' · 共 '+caseData.petCount+' 隻':'')),statusBadge(caseData.status));
+  host.prepend(hero);
+  if(caseData.specialAlert){const alert=cpNode('aside',null,'ui-care-banner');alert.append(cpNode('strong','照護提醒'),cpNode('p',caseData.specialAlert));hero.after(alert);}
+  const nav=cpNode('nav',null,'ui-detail-nav');nav.setAttribute('aria-label','案件詳情導覽');
+  const sections=Array.from(host.querySelectorAll('.unified-detail-section'));
+  const detailStart=sections[0]||host.querySelector('.unified-detail-grid');
+  [['完整資料',detailStart],['狀態／備註',actions]].forEach(([label,target])=>{if(!target)return;nav.append(cpButton(label,()=>{target.scrollIntoView?.({block:'start',behavior:'smooth'});const input=target.querySelector('select,textarea');if(input)input.focus({preventScroll:true});}));});
+  hero.after(nav);
+  uiUpdateDetailNav();
+  const footer=cpNode('div',null,'ui-save-footer');const save=actions.querySelector('button[type=submit]');footer.append(cpNode('span','僅更新店家狀態與備註'),save);actions.append(footer);
+}
+function uiPetSaved(saved,before,pet){
+  cpRender(saved);
+  const oldIds=new Set(before.pets.map(p=>p.id));const changed=pet?saved.pets.find(p=>p.id===pet.id):saved.pets.find(p=>!oldIds.has(p.id));
+  if(changed){const card=Array.from(document.querySelectorAll('#cp-content [data-pet-id]')).find(b=>b.dataset.petId===changed.id);if(card){card.classList.add('ui-pet-saved');card.tabIndex=-1;card.focus({preventScroll:true});card.scrollIntoView?.({block:'nearest',behavior:'smooth'});}toast((pet?'已更新':'已新增')+changed.general.name+'，目前共 '+saved.pets.length+' 隻');}
+}
+
+    uiInit();
     clearSensitiveUrlParams();
     token = localStorage.getItem(SESSION_KEY) || "";
     if (token) {
